@@ -2,7 +2,7 @@
 ## The personal works to design *SharePoint rendering form*, include *HTML, CSS and JS*.
 GitHub is only the place for my development storage before final deploy to SharePoint 2013 on-promise.
 
-*! Once the standardize done, no further modification/update, whole project will close!*
+**! Once the standardize done, no further modification/update, whole project will close!**
 
 #### 1. HTML files:
 >Files will build my own blocks inside SharePoint for different purposes:
