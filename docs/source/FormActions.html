@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>The source code</title>
+  <link href="../resources/prettify/prettify.css" type="text/css" rel="stylesheet" />
+  <script type="text/javascript" src="../resources/prettify/prettify.js"></script>
+  <style type="text/css">
+    .highlight { display: block; background-color: #ddd; }
+  </style>
+  <script type="text/javascript">
+    function highlight() {
+      document.getElementById(location.hash.replace(/#/, "")).className = "highlight";
+    }
+  </script>
+</head>
+<body onload="prettyPrint(); highlight();">
+  <pre class="prettyprint lang-js"><span id='global-property-'>/**
+</span> * @author Zhang, Wei - Michael
+ * Several SharePoint functions cannot initial in strict mode
+ * Setup for global vars
+ */
+<span id='global-property-itemListIDs'>/**
+</span> * Prepare for list items deleting
+ * @type {Array}
+ */
+var itemListIDs = [];
+<span id='global-property-approverListIDs'>/**
+</span> * Save for approver list items
+ * @type {Array}
+ */
+var approverListIDs = [];
+<span id='global-property-currencyList'>/**
+</span> * Temporary BG list to retrieve from SharePoint list
+ * @type {Array}
+ */
+var currencyList = [];
+<span id='global-property-accountList'>/**
+</span> * Temporary account list to retrieve from SharePoint list
+ * @type {Array}
+ */
+var accountList = [];
+<span id='global-property-RIDText'>/**
+</span> * @property RIDText, autoNumber, WaitingDialog -
+ * All the key variables in form
+ */
+var RIDText,
+    autoNumber,
+    WaitingDialog;
+
+<span id='init'>/**
+</span> * @class init
+ * #The major function to initial the rendering form.
+ * ##Several key rules:
+ *     - Default HTML forms include: NewForm, DispForm and EditForm
+ *     - Use jQuery selectors and value retrieve and setting
+ *     - To enable customized code working, SP.SOD.executeFunc('sp.js','SP.ClientContext',init); must include in forms
+ *     - Ideally one Init function already enough for all 3 default HTML forms, to reduce the execution effort
+ * @return {String} Rendering form designed as the way developer like
+ *
+ * @requires SP.ClientContext
+ * @requires SP.UI.ModalDialog
+ * @requires ledvance.UI
+ * @requires moment
+ * @requires getListItemsByKey
+ * @requires createListItem
+ * @requires updateListItem
+ * @requires deleteListItem
+ * @requires createRID
+ * @requires updateAutoNumber
+ * @requires setUserFieldValue
+ * @requires getUserFieldValue
+ * @requires attachUserFieldFunction
+ * @requires MaxnTotalCalc
+ * @requires initializePeoplePicker
+ */
+function init() {
+<span id='init-event-renderLayout'>    /**
+</span>     * @event renderLayout
+     * ledvance.UI.js already included inside HTML forms, renderLayout to initial the form
+     */
+    ledvance.UI.renderLayout();
+<span id='init-property-WaitingDialog'>    /**
+</span>     * SharePoint predefined the WaitScreen, define the customize variable to include it into form
+     * @type {String} SharePoint defined ModalDialog
+     */
+    WaitingDialog = SP.UI.ModalDialog.showWaitScreenWithNoClose(&quot;Wait for a moment please...&quot;, &quot;It shouldn't be very long.&quot;, 200, 500);
+
+<span id='init-event-fullscreenmodeBtn_Click'>    /**
+</span>     * @event fullscreenmodeBtn_Click
+     * Execute SharePoint *&quot;Full Screen Mode&quot;*
+     */
+    $('#ctl00_fullscreenmodeBtn').click();
+
+<span id='init-event-table_width'>    /**
+</span>     * @event table_width
+     * Standardize page tables width
+     * @type {Number} pixle of width
+     */
+    var mainWidth = $('#MainInfo').width();
+    $('.ItemsList table').width(mainWidth);
+    $('.dialog table').width(500);
+
+<span id='init-event-Claim_Type_change'>    /**
+</span>     * @event Claim_Type_change
+     * FieldName and field change base on ClaimType select
+     * Attach the function to *&quot;Claim Type&quot;* selector's change method
+     * var typeText Current selector's value
+     * Other related field will change based on the value change
+     */
+    $(&quot;select[title^='Claim Type']&quot;).change(function(){
+        var typeText = $(&quot;select[title^='Claim Type']&quot;).val();
+        if(typeText === 'Project') {
+            $(&quot;span[data-displayname='Cost Center']&quot;).hide();
+            $(&quot;span[data-displayname='Order Number']&quot;).show();
+            $(&quot;.changeLabel b&quot;).text('Order Number:');
+        } else {
+            $(&quot;span[data-displayname='Cost Center']&quot;).show();
+            $(&quot;span[data-displayname='Order Number']&quot;).hide();
+            $(&quot;.changeLabel b&quot;).text('Cost Center:');
+        }
+    });
+
+<span id='init-event-BG_change'>    /**
+</span>     * @event BG_change
+     * Retrieve key information by BG selector
+     * If *&quot;BG&quot;* selecter's value changed and not blank, insert the retrieved data in variable *&quot;currencyList&quot;* (array).
+     * Meanwhile, get *&quot;PCV Account&quot;* list items base on BG, and save into variable *&quot;accountList&quot;* (array).
+     */
+    $(&quot;select[title^='BG']&quot;).change(function(){
+        if($(this).val() !== '') {
+            $(&quot;input[title^='BG']&quot;).val($(this).val());
+            for(var i in currencyList) {
+                if(currencyList[i][0] === $(this).val()) {
+                    var bgIndex = i;
+                }
+            }
+            $(&quot;input[title^='Company Code']&quot;).val(currencyList[bgIndex][1]);
+            $(&quot;input[title^='Currency']&quot;).val(currencyList[bgIndex][3]);
+            $(&quot;input[title^='Prefix']&quot;).val(currencyList[bgIndex][4]);
+            $(&quot;#AmountList7&quot;).val(currencyList[bgIndex][3]);
+
+            var requestTitle = $(this).val() + '-' + RIDText;
+            $(&quot;input[id^='Title']&quot;).val(requestTitle);
+
+<span id='init-event-getListItemsByKey_Account'>            /**
+</span>             * @event getListItemsByKey_Account
+             * For details please check: {@link getListItemsByKey}.
+             * Retrieve expense type (FA Account) from PCV Account list base on BG selection.
+             * Result is Accounts information of BG, return as Array and assign to global accountList within callback function.
+             */
+            getListItemsByKey('PCV Account', 'BG', $(this).val(), ['Title', 'English_x0020_Description', 'Chinese_x0020_Description', 'Claim_x0020_Type'], function(x){
+                accountList = x;
+            });
+        }
+    });
+
+<span id='init-event-Attachments_Show'>    /**
+</span>     * @event Attachments_Show
+     * Show Attachments list only when there is Attachment(s) inside.
+     */
+    if($('#idAttachmentsTable').children().length === 0) {
+        $('#attachOKbutton').click(function(){
+            $('#Attachments').show();
+            var oldLink = $(&quot;a[href^='javascript:RemoveLocal']:last&quot;).attr('href').replace('javascript:', '');
+            var newLink = oldLink + &quot;;if($('#idAttachmentsTable tbody').children().length===0)$('#Attachments').hide();return false&quot;;
+            $(&quot;a[href^='javascript:RemoveLocal']:last&quot;).attr('onclick', newLink);
+            $(&quot;a[href^='javascript:RemoveLocal']:last&quot;).attr('href', '#');
+        });
+    } else {
+        $('#Attachments').show();
+    }
+
+<span id='init-event-initializePeoplePicker_ApproverPicker'>    /**
+</span>     * @event initializePeoplePicker_ApproverPicker
+     * Initial people picker in dialog with function {@link initializePeoplePicker}
+     * 
+     */
+    if($('#ApproverPicker').length &gt; 0) {
+        initializePeoplePicker('ApproverPicker', function(){
+            $('#ApproverPicker_TopSpan').attr('title', 'Approver Picker');
+            $('#ApproverPicker_TopSpan_EditorInput').attr('title', 'Approver Picker Editor');
+<span id='init-event-attachUserFieldFunction_ApproverPicker'>            /**
+</span>             * @event attachUserFieldFunction_ApproverPicker
+             * Attach the automatically get user information function to *&quot;Approver Picker&quot;* people picker, see details {@link attachUserFieldFunction}
+             */
+            attachUserFieldFunction('Approver Picker', ['Approver Account', 'Approver Name'], ['AccountName', 'PreferredName']);
+        });
+        $('#ApproverListDialog').css('paddingBottom', '150px');
+    }
+
+<span id='init-event-diidIOGoBack_attr'>    /**
+</span>     * @event diidIOGoBack_attr
+     * Prepend exit focus function into Close / Cancel button
+     */
+    var oldFn = $(&quot;input[id$='ctl00_diidIOGoBack']&quot;).attr('onclick');
+    var newFn = &quot;$('#ctl00_exitfullscreenmodeBtn').click();&quot; + oldFn;
+    $(&quot;input[id$='ctl00_diidIOGoBack']&quot;).attr('onclick', newFn);
+
+<span id='init-event-btnAdd_click'>    /**
+</span>     * @event btnAdd_click
+     * Setup btnAdd to enable list line adding dialog
+     */
+    $('.btnAdd').click(function(){
+        var divId = $(this).parent().parent().attr('id');
+        var dialogId = divId + 'Dialog';
+        $('#' + dialogId).dialog('open');
+        //Reset all content
+        if(divId === 'ApproverList'){
+            $('#' + divId + '2').val('Approver' + $('#' + divId + ' tbody').children().length);
+            $(&quot;a[id^='ApproverPicker']&quot;).click();
+            $('#ApproverPicker').attr('style', '');
+            $('#ApproverPicker').parent().find('.ms-formvalidation').remove();
+        } else {
+            $('#' + dialogId + ' .text').val('');
+        }
+
+        //Mark status as add
+        $('#'+dialogId+' .Status').val('add');
+
+        //Retrive expense type base on Claim Type
+        if(divId === 'AmountList') {
+            $.each(accountList, function(x, arr) {
+                $.each(arr, function(y, val) {
+                    if($.isArray(val)) {
+                        if($.inArray($(&quot;select[title^='Claim Type']&quot;).val(), val) != -1) {
+                            console.log(arr);
+                            if(arr[2] === null) {
+                                arr[2] = '';
+                            }
+                            $('#AmountList3').append(&quot;&lt;option value='&quot; + arr[1] + &quot;' Account='&quot; + arr[0] + &quot;'&gt;&quot; + arr[0] + &quot; - &quot; + arr[1] + &quot; - &quot; + arr[2] +&quot;&lt;/option&gt;&quot;);
+                        }
+                    }
+                });
+            });
+        }
+        return false;
+    });
+
+<span id='init-event-btnEdit_click'>    /**
+</span>     * @event btnEdit_click
+     * Setup btnEdit to enable list line editing dialog
+     */
+    $('.btnEdit').click(function(){
+        var divId = $(this).parent().parent().attr('id');
+        var dialogId = divId + 'Dialog';
+        $('#'+dialogId).dialog('open');
+
+        //Retrive expense type base on Claim Type
+        if(divId === 'AmountList') {
+            $.each(accountList, function(x, arr) {
+                $.each(arr, function(y, val) {
+                    if($.isArray(val)) {
+                        if($.inArray($(&quot;select[title^='Claim Type']&quot;).val(), val) != -1) {
+                            console.log(arr);
+                            if(arr[2] === null) {
+                                arr[2] = '';
+                            }
+                            $('#AmountList3').append(&quot;&lt;option value='&quot; + arr[1] + &quot;' Account='&quot; + arr[0] + &quot;'&gt;&quot; + arr[0] + &quot; - &quot; + arr[1] + &quot; - &quot; + arr[2] +&quot;&lt;/option&gt;&quot;);
+                        }
+                    }
+                });
+            });
+        }
+
+        //Read content into dialog
+        var listContent = [];
+        $('tr.ui-selected').find('td').each(function(){
+            listContent.push($(this).html());
+        });
+        for (var i in listContent) {
+            var x = parseInt(i) + 1;
+            $('#'+divId+x).val(listContent[i]);
+        }
+        //Setup textarea value/text to enable new line
+        var oldStr = $('#' + dialogId + ' textarea').val();
+        var newStr = oldStr.replace(/\&lt;\S+\s+\S+\&gt;/g, '\n');
+        $('#' + dialogId + ' textarea').val(newStr);
+
+        //Mark status as edit
+        $('#'+dialogId+' .Status').val('edit');
+        return false;
+    });
+
+<span id='init-event-btnDelete_click'>    /**
+</span>     * @event btnDelete_click
+     * Setup btnDelete to delete selected row in items list
+     */
+    $('.btnDelete').click(function(){
+        var divId = $(this).parent().parent().attr('id');
+
+        //Save list ID for deleted items
+        if($('tr.ui-selected td:eq(1)').text() === RIDText) {
+            listIDs.push($('tr.ui-selected td:first').text());
+        }
+
+        $('tr.ui-selected').remove();
+
+        if($('#' + divId + ' table tbody').children().length === 1){
+            //$('#MPrice').text('0.00');
+            $('#TPrice').text('0.00');
+            $('#' + divId + ' .btnEdit').hide();
+            $('#' + divId + ' .btnDelete').hide();
+            $(&quot;select[title^='BG']&quot;).removeAttr('disabled');
+            $(&quot;select[title^='Claim Type']&quot;).removeAttr('disabled');
+        } else {
+            //Calculate for Max and Totel amount when delete item
+            var result = MaxnTotalCalc(divId, 'Amount');
+            //$('#MPrice').text(result[0]);
+            //$(&quot;input[id^='Max_']&quot;).val(result[0]);
+            $('#TPrice').text(result[1]);
+            $(&quot;input[id^='Total_']&quot;).val(result[1]);
+        }
+
+        //Remove Edit and Delete buttons
+        $('#' + divId + ' .btnEdit').hide();
+        $('#' + divId + ' .btnDelete').hide();
+
+        return false;
+    });
+
+<span id='init-event-selectable_selectable'>    /**
+</span>     * @event selectable_selectable
+     * Enable select exists row(s) in items list
+     */
+    $('.selectable').selectable({
+        stop: function() {
+            var divId = $('tr.ui-selected').parent().parent().parent().attr('id');
+            $('#' + divId + ' table tbody tr:first').attr('class','');
+            $('#' + divId + ' table tbody tr:first td').attr('class','');
+            if($('#' + divId + ' tr.ui-selected').length === 1) {
+                $('#' + divId + ' .btnEdit').show();
+                $('#' + divId + ' .btnDelete').show();
+            } else {
+                $('#' + divId + ' .btnEdit').hide();
+                $('#' + divId + ' .btnDelete').hide();
+            }
+        }
+    });
+
+<span id='init-event-AmountList6_Change'>    /**
+</span>     * @event AmountList6_Change
+     * Basic calculation for Amount
+     */
+    $('#AmountList6').change(function(){
+        if ($(this).val() !== '') {
+            var amount = parseFloat($(this).val());
+            $(this).val(amount.toFixed(2));
+        }
+    });
+
+<span id='init-event-AmountList3_change'>    /**
+</span>     * @event AmountList3_change
+     * Fill in the PCV Account
+     */
+    $('#AmountList3').change(function(){
+        var selectedValue = $(this).val();
+        $(this).children().each(function(){
+            if($(this).val() === selectedValue) {
+                $('#AmountList2').val($(this).attr('Account'));
+            }
+        });
+    });
+
+<span id='init-event-Required_blur'>    /**
+</span>     * @event Required_blur
+     * Dialog fields validation -- Required
+     */
+    $('.Required').blur(function(){
+        var dialogId = $(this).attr('id').replace(/\d/, 'Dialog');
+        if($(this).val() === '') {
+            console.log(&quot;It's Blank: &quot; + $(this).attr('id'));
+            if($(this).parent().find('.ms-formvalidation').length === 0) {
+                $(this).css('border-color', 'red');
+                $(this).parent().append(&quot;&lt;span class='ms-formvalidation'&gt;&lt;br /&gt;The field is required.&lt;/span&gt;&quot;);
+                $('#' + dialogId).next().find('.ui-button:first').attr('disabled','disabled');
+            }
+        } else {
+            console.log(&quot;It's not Blank (&quot; + $(this).attr('id') + '): ' + $(this).val());
+            if($(this).parent().find('.ms-formvalidation').length !== 0) {
+                $(this).attr('style', '');
+                $(this).parent().find('.ms-formvalidation').remove();
+            }
+        }
+        if($('#' + dialogId).find('.ms-formvalidation').length === 0 &amp;&amp; $('#' + dialogId).next().find('.ui-button:first').attr('disabled') !== undefined ) {
+            $('#' + dialogId).next().find('.ui-button:first').removeAttr('disabled');
+
+        }
+    });
+
+<span id='init-method-dialog'>    /**
+</span>     * @method dialog
+     * Dialog to Add or Edit list item
+     * @param  {Boolean} autoOpen Dialog open automatically or not
+     * @param  {Number} width Dialog width
+     * @param  {Boolean} scrollbars Dialog shows scroll bars or not
+     * @param  {Boolean} modal Dialog shows as modal window or not
+     * @param  {Object} buttons Dialog additional buttons setup
+     * @param  {Function/Object} close Dialog close method setup
+     */
+    $('.dialog').dialog({
+        autoOpen: false,
+        width: 515,
+        scrollbars: false,
+        modal: true,
+        buttons: [{
+            text: &quot;OK&quot;,
+            click: function() {
+                var dialogId = $(this).attr('id');
+                var divId = dialogId.slice(0,dialogId.indexOf('Dialog'));
+                var dialogLength = $('#' + dialogId + ' tbody').children().length;
+
+
+                //Confirm status to decide to Add or Edit
+                if($('#' + dialogId +' .Status').val() === 'add') {
+                    //Add new list item
+                    $('#'+divId+' table tbody').append('&lt;tr class=&quot;ui-widget-content new&quot;&gt;&lt;/tr&gt;');
+                    for (var i = 0; i &lt; dialogLength; i++) {
+                        var ii = i + 1;
+                        if($('#' + divId + ii).is('textarea')) {
+                            var textareaVal = $('#' + divId + ii).val();
+                            var textareaSave = textareaVal.replace(/\n|\r\n/g, '&lt;br /&gt;');
+                            console.log(textareaSave);
+                            $('#'+divId+' tr.ui-widget-content:last').append('&lt;td&gt;' + textareaSave + '&lt;/td&gt;');
+                        } else if($('#' + divId + ' .selectable th:eq(' + i + ')').attr('class').indexOf('hidden') != -1) {
+                            $('#'+divId+' tr.ui-widget-content:last').append('&lt;td class=&quot;hidden&quot;&gt;'+$('#'+divId+ii).val()+'&lt;/td&gt;');
+                        } else {
+                            $('#'+divId+' tr.ui-widget-content:last').append('&lt;td&gt;'+$('#'+divId+ii).val()+'&lt;/td&gt;');
+                        }
+                    }
+
+                    //Disable the selectors
+                    $(&quot;select[title^='BG']&quot;).attr('disabled', 'disabled');
+                    $(&quot;select[title^='Claim Type']&quot;).attr('disabled', 'disabled');
+
+                } else {
+                    //Edit selected list item
+                    $('tr.ui-selected').html('');
+                    for (var i = 0; i &lt; dialogLength; i++) {
+                        var ii = i + 1;
+                        if($('#' + divId + ii).is('textarea')) {
+                            var textareaVal = $('#' + divId + ii).val();
+                            var textareaSave = textareaVal.replace(/\n|\r\n/g, '&lt;br /&gt;');
+                            $('#'+divId+' tr.ui-widget-content:last').append('&lt;td&gt;' + textareaSave + '&lt;/td&gt;');
+                        } else if($('#' + divId + ' .selectable th:eq(' + i + ')').attr('class').indexOf('hidden') != -1) {
+                            $('#'+divId+' tr.ui-widget-content:last').append('&lt;td class=&quot;hidden&quot;&gt;'+$('#'+divId+ii).val()+'&lt;/td&gt;');
+                        } else {
+                            $('#'+divId+' tr.ui-widget-content:last').append('&lt;td&gt;'+$('#'+divId+ii).val()+'&lt;/td&gt;');
+                        }
+                    }
+                    if($(&quot;input[id^='Status_']&quot;).val() !='Draft') {
+                        $('tr.ui-selected').attr('class', 'ui-widget-content updated');
+                    }
+                }
+
+                //Keep the border for table only, not td(s) inside
+                $('tr.ui-widget-content').css('border','0');
+
+                //Calculate for Totel amount when save item
+                if(divId === 'AmountList') {
+                    var result = MaxnTotalCalc(divId, 'Amount');
+                    $('#TPrice').text(result[1]);
+                }
+                $(this).dialog('close');
+
+            }}, {
+            text: &quot;Cancel&quot;,
+            click: function() {
+                $( this ).dialog('close');
+            }
+        }],
+        close: function() {
+            if($(this).next().find('.ui-button:first').attr('disabled') !== undefined ) {
+                $(this).next().find('.ui-button:first').removeAttr('disabled');
+                $(this).find('.ms-formvalidation').remove();
+                $(this).find('input').removeAttr('style');
+            }
+
+            var dialogId = $(this).attr('id');
+            var divId = dialogId.slice(0,dialogId.indexOf('Dialog'));
+            if(divId === 'AmountList'){
+                $(&quot;#AmountList3&quot;).html(&quot;&lt;option selected='selected' value=''&gt;&lt;/option&gt;&quot;);
+            }
+            $('#' + divId + ' .btnEdit').hide();
+            $('#' + divId + ' .btnDelete').hide();
+        }
+    });
+
+<span id='init-property-form_Content'>    /**
+</span>     * @property form_Content
+     * Initial the default form by different conditions - New, Edit, Disp
+     */
+    if($(&quot;span[data-displayname='Request ID']&quot;).children().length !== 0 &amp;&amp; $(&quot;input[title^='Request ID']&quot;).val() === '') {
+
+        $(&quot;input[title^='Request ID']&quot;).attr('readonly', 'readonly');
+        $(&quot;input[id^='Status_']&quot;).val('Draft');
+
+        $(&quot;input[id^='Title']&quot;).css('display', 'none');
+        $(&quot;input[title^='Request Date']&quot;).attr('readonly', 'readonly');
+        $(&quot;input[title^='Request Date']&quot;).val(moment().format('YYYY-MM-DD'));
+        $(&quot;table[title^='Request Date'] tbody tr td:eq(1)&quot;).css('display', 'none');
+
+        //Resize the input controls
+        $(&quot;input[id$='DateTimeFieldDate']&quot;).attr('class', 'ms-long');
+        $(&quot;select[id$='DropDownChoice']&quot;).attr('class', 'ms-long');
+        $(&quot;select[id$='LookupField']&quot;).attr('class', 'ms-long');
+<span id='init-event-getListItemsByKey_autoNumber'>        /**
+</span>         * @event getListItemsByKey_autoNumber
+         * Create autoNumber RID, first get autoNumber from SP list item, see details: {@link getListItemsByKey}
+         * @return {Array}    AutoNumber list item content, assign first one as autoNumber.
+         */
+        getListItemsByKey('Finance Approvers', 'ID', 1, ['Auto_x0020_Number'], function(x) {
+            autoNumber = x[0][0];
+            console.log(autoNumber);
+<span id='init-event-createRID_PCV'>            /**
+</span>             * @event createRID_PCV
+             * Second create RID base on autoNumber, see details: {@link createRID}
+             * @return {String}    Generated RID text, assign it as RIDText.
+             */
+            createRID('PCV-', 'autoNumber', function(x) {
+                RIDText = x;
+                console.log(RIDText);
+                $(&quot;input[title^='Request ID']&quot;).val(RIDText);
+                //Structure of items list
+                $('.RID').val(RIDText);
+
+<span id='init-event-updateAutoNumber_PCV'>                /**
+</span>                 * @event updateAutoNumber_PCV
+                 * Last update SP list item with autoNumber + 1, see details: {@link updateAutoNumber}
+                 */
+                updateAutoNumber('Finance Approvers', 1, autoNumber, function(){
+<span id='init-event-getListItemsByKey_BG'>                    /**
+</span>                     * @event getListItemsByKey_BG
+                     * Prepare for BG selection, see details: {@link getListItemsByKey}
+                     * @return {Array}      BG list item content, assign whole Array as currencyList.
+                     */
+                    getListItemsByKey('Currency List', 'ID', '', ['Title', 'Company_x0020_Code', 'Full_x0020_Name', 'Currency', 'Vendor_x0020_Prefix'], function(x){
+                        currencyList = x;
+                        for (var i in currencyList) {
+                            $(&quot;select[title^='BG']&quot;).append(&quot;&lt;option value='&quot; + currencyList[i][0] + &quot;'&gt;&quot; + currencyList[i][0] + ' - ' + currencyList[i][2] + &quot;&lt;/option&gt;&quot;);
+                        }
+<span id='init-event-attachUserFieldFunction_PayTo'>                        /**
+</span>                         * @event attachUserFieldFunction_PayTo
+                         * Attach the automatically get specific user information function to 'Pay To' people picker, see detials: {@link attachUserFieldFunction}
+                         */
+                        attachUserFieldFunction('Pay To', ['Cost Center', 'Employee Number'], ['costCenter', 'employeeNumber']);
+<span id='init-event-WaitingDialog_close'>                        /**
+</span>                         * @event WaitingDialog_close
+                         * Close the WaitingDialog after all events executed successfully.
+                         */
+                        WaitingDialog.close();
+                    });
+                });
+            });
+        });
+
+<span id='init-event-ItemList_show'>        /**
+</span>         * @event ItemList_show
+         * Show every ItemsList except Attachments
+         */
+        $('.ItemsList:not(#Attachments)').show();
+
+
+    } //else if($(&quot;span[data-displayname='Request ID']&quot;).children().length != 0 &amp;&amp; $(&quot;input[title^='Request ID']&quot;).val() != '') {
+
+  //Setup readonly fields
+ //  $(&quot;input[id^='Form']&quot;).css('width','550');
+ //  $(&quot;input[id^='Form']&quot;).attr('readonly', 'readonly');
+ //  $(&quot;input[title^='Request ID']&quot;).attr('readonly', 'readonly');
+ //  $(&quot;input[id^='Status_']&quot;).attr('readonly', 'readonly');
+ //  $(&quot;input[title^='Request Date']&quot;).attr('readonly', 'readonly');
+ //  $(&quot;table[title^='Request Date'] tbody tr td:eq(1)&quot;).css('display', 'none');
+
+ //  //Resize the input controls
+ //  $(&quot;input[id$='DateTimeFieldDate']&quot;).attr('class', 'ms-long');
+ //  $(&quot;select[id$='DropDownChoice']&quot;).attr('class', 'ms-long');
+ //  $(&quot;select[id$='LookupField']&quot;).attr('class', 'ms-long');
+
+ //  //Retrieve list content base on RID
+ //  RIDText = $(&quot;input[title^='Request ID']&quot;).val();
+ //  getListItemsByKey('Scrapping Items', 'Title', RIDText);
+
+ // } else {
+
+ //  //Hide and show div by Scrap Type, meanwhile retrieve list content with JSOM function
+ //  var RIDString = $(&quot;span[data-displayname='Request ID']&quot;).text();
+ //  var trimText = /\S+/;
+ //  RIDText = trimText.exec(RIDString)[0];
+ //  var myId = GetUrlKeyValue('ID');
+
+ //  $('#Applist1').text($(&quot;span[data-displayname='CC Responsible'] .ms-peopleux-userdisplink&quot;).text());
+ //  getListItemsByKey('Workflow History', 'Item', myId);
+
+ // }
+
+}
+
+<span id='init-method-PreSaveAction'>/**
+</span> * @method PreSaveAction
+ * ###In this function you can handle field validation and additional changes before the form will be saved. Return true, if form can be saved, false if doesn’t
+ * ###Several suggestions:
+ *     - Organize all the saving/deleting functions in here
+ *     - Validation rules should more focus on additional contents
+ *     - SharePoint original list item will validate itself by column type
+ * @preventable
+ */
+function PreSaveAction(){
+    var divId;
+    var formStatus;
+    if($(&quot;select[id^='Scrap_']&quot;).val() === 'Inventory') {
+        divId = 'InvList';
+    } else {
+        divId = 'AssetList';
+    }
+    if($('#ApproverList').css('display') === 'none') {
+        formStatus = 'No scrapping item.';
+    } else if($(&quot;input[id^='BU']&quot;).val() === '[]' || $(&quot;input[id^='SAP']&quot;).val() === '[]') {
+        formStatus = 'Approver list not complete.';
+    } else if($('.trHide:first').css('display') != 'none' &amp;&amp; $(&quot;input[id^='AC_CON']&quot;).val() === '[]') {
+        formStatus = 'No AC &amp; CON approver.';
+    } else if($('.trHide:last').css('display') != 'none' &amp;&amp; $(&quot;input[id^='AC']&quot;).val() === '[]') {
+        formStatus = 'No AC approver.';
+    } else {
+        formStatus = 'pass';
+    }
+    console.log('Current form status: ' + formStatus);
+
+    //Get list column name and push into an array
+    var itemList = $('#' + divId + ' table tbody');
+    var listCol = $('#' + divId + ' table tbody tr:first');
+    var colName = [];
+    listCol.find('th').each(function(){
+        colName.push($(this).attr('title'));
+    });
+
+    //Get new list item content and push into another array
+    var newItemContents = [];
+    var newGetItem = '';
+    var newGetItems = [];
+    for (i=1;i&lt;itemList.children().length;i++){
+        newGetItem = $('#' + divId + ' table tbody tr:eq('+i+').new');
+        newGetItem.find('td').each(function(){
+            newGetItems.push($(this).text());
+        });
+        newItemContents.push(newGetItems);
+    }
+    console.log(newItemContents);
+
+    //Get updated list item content and push into third array
+    var updateItemContents = [];
+    var updateGetItem = '';
+    var updateGetItems = [];
+    for (i=1;i&lt;itemList.children().length;i++){
+        updateGetItem = $('#' + divId + ' table tbody tr:eq('+i+').updated');
+        updateGetItem.find('td').each(function(){
+            updateGetItems.push($(this).text());
+        });
+        updateItemContents.push(updateGetItems);
+    }
+    console.log(updateItemContents);
+
+    if(formStatus === 'pass') {
+        //Confirm to save the request
+        var saveConfirm = confirm('Please confirm to submit the request:');
+        if(saveConfirm === true) {
+
+            //Create list items
+            console.log(newItemContents[0].length);
+            if(newItemContents[0].length &gt; 0) {
+                for (var i in newItemContents) {
+                    createListItem(&quot;Scrapping Items&quot;, colName, newItemContents[i]);
+                }
+            }
+
+            //Update list items
+            console.log(updateItemContents[0].length);
+            if(updateItemContents[0].length &gt; 0) {
+                for (var i in updateItemContents) {
+                    updateListItem(&quot;Scrapping Items&quot;, colName, updateItemContents[i]);
+                }
+            }
+
+            //Delete list items
+            console.log(listIDs.length);
+            if(listIDs.length &gt; 0) {
+                deleteListItem(&quot;Scrapping Items&quot;, listIDs);
+            }
+
+            //Setup Status
+            if($(&quot;input[id^='Status_']&quot;).val() === 'Draft') {
+                $(&quot;input[id^='Status_']&quot;).val('Submitted');
+            } else if($(&quot;input[id^='Status_']&quot;).val() === 'Rework') {
+                $(&quot;input[id^='Status_']&quot;).val('Resubmitted');
+            }
+
+            //Clean up approvers list
+            if($('.trHide:first').css('display') === 'none') {
+                $(&quot;a[id^='AC_']&quot;).click();
+                $(&quot;input[id^='AppStatus3']&quot;).val('');
+            }
+            if($('.trHide:last').css('display') === 'none') {
+                $(&quot;a[id^='AC_']:last&quot;).click();
+                $(&quot;input[id^='AppStatus4']&quot;).val('');
+            }
+
+            //Exit focus form mode
+            $('#ctl00_exitfullscreenmodeBtn').click();
+
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        alert('The form cannot save because: ' + formStatus);
+    }
+}
+
+<span id='updateAutoNumber'>/**
+</span> * @class updateAutoNumber
+ * #Update the autoNumber + 1 back to SharePoint list item.
+ *
+ * The autoNumber list must has the column name **&quot;Auto Number&quot;**, otherwise the function will not work.
+ *
+ * @param {String} listTitle Target SharePoint list title
+ * @param {Number} itemId Item ID to update
+ * @param {Number} num The autoNumber needs to update
+ * @param {Function} callback The callback function to handle other works in form
+ *
+ * @requires updateListItem
+ *
+ * #See the example:
+ *     updateAutoNumber('list', 1, 66, function(){
+ *         otherWorks();
+ *     });
+ */
+function updateAutoNumber(listTitle, itemId, num, callback) {
+
+    num = num + 1;
+    var colName = ['ID', 'Auto_x0020_Number'];
+    var itemContent = [itemId, num];
+    this.callback = callback;
+
+    //Update list item by specified information
+    updateListItem(listTitle, colName, itemContent, callback);
+}
+
+<span id='createRID'>/**
+</span> * @class createRID
+ * #Create Request ID (RID) with 2 different types
+ *
+ * @param  {String}   appPrefix Prefix to identify current application
+ * @param  {String}   type=&quot;time&quot;, &quot;autoNumber&quot;      Predefined 2 types: time and autoNumber
+ * @param  {Function} callback  Callback function after RID generation
+ * @return {String}             New Request ID (RID)
+ *
+ * #See the example 1 for type &quot;time&quot;:
+ *     createRID('prefix', 'time', function(){
+ *         doSomething;
+ *     });
+ *
+ * #See the example 2 for type &quot;autoNumber&quot;:
+ *     createRID('prefix', 'autoNumber', function(){
+ *         updateAutoNumber(...);
+ *     });
+ */
+function createRID(appPrefix, type, callback) {
+
+    var now = moment();
+    var RID = '';
+    //Setup for type &quot;time&quot;
+    if(type === 'time') {
+        RID = appPrefix + now.format('YYMMDDHHmmss');
+        //Setup for type &quot;autoNumber&quot;
+    } else if(type === 'autoNumber') {
+        RID = appPrefix + now.format('YYWW') + autoNumber;
+    }
+
+    if(callback &amp;&amp; typeof(callback) === &quot;function&quot;) {
+        callback(RID);
+    } else {
+        return RID;
+    }
+}
+
+<span id='setUserFieldValue'>/**
+</span> * @class setUserFieldValue
+ * #Input user field by specifc user account
+ * @param {String} fieldName The user field title
+ * @param {String} userName  The user account needs to insert
+ *
+ * #See the example:
+ *     setUserFieldValue('PeoplePicker', 'domain\\username');
+ */
+function setUserFieldValue(fieldName, userName) {
+    var _PeoplePickerTopId = $(&quot;div[title^='&quot; + fieldName + &quot;']&quot;).attr('id');
+    var _PeoplePickerEditor = $(&quot;input[title^='&quot; + fieldName + &quot;']&quot;);
+    _PeoplePickerEditor.val(userName);
+    var _PeoplePickerObject = SPClientPeoplePicker.SPClientPeoplePickerDict[_PeoplePickerTopId];
+    _PeoplePickerObject.AddUnresolvedUserFromEditor(true);
+    return false;
+}
+
+<span id='getUserFieldValue'>/**
+</span> * @class getUserFieldValue
+ * #Retrieve user field value matches returnProperty
+ * @param  {String}   fieldName      The user field title
+ * @param  {String}   returnProperty The property needs to retrieve
+ * @param  {Function} callback       The callback function
+ * @return {String}                  The content of returnProperty
+ *
+ * #See the example:
+ *     getUserFieldValue('PeoplePicker', 'Description', function(){
+ *         doSomething;
+ *     });
+ */
+function getUserFieldValue(fieldName, returnProperty, callback) {
+    var _PeoplePickerTopId = $(&quot;div[title^='&quot; + fieldName + &quot;']&quot;).attr('id');
+    var _PeoplePickerEditor = $(&quot;input[title^='&quot; + fieldName + &quot;']&quot;);
+    var _PeoplePickerObject = SPClientPeoplePicker.SPClientPeoplePickerDict[_PeoplePickerTopId];
+    var users = _PeoplePickerObject.GetAllUserInfo();
+    for (var i = 0; i &lt; users.length; i++) {
+        var user = users[i];
+        for (var userProperty in user) {
+            if(userProperty==returnProperty){
+                return user[userProperty];
+            }
+        }
+    }
+    if(callback &amp;&amp; typeof(callback) === &quot;function&quot;) {
+        callback();
+    }
+}
+
+<span id='attachUserFieldFunction'>/**
+</span> * @class attachUserFieldFunction
+ * #Attach function to specific user field
+ * @param  {String} fieldName   The user field title
+ * @param  {String[]} inputFields The fields array to input properties
+ * @param  {String[]} keyValues   The values arrya to input into specific fields
+ *
+ * #See the example:
+ *     attachUserFieldFunction('PeoplePicker', ['field1', 'field2'], ['value1', 'value2']);
+ */
+function attachUserFieldFunction(fieldName, inputFields, keyValues) {
+    this.fieldName = fieldName;
+    this.inputFields = inputFields || [];
+    this.keyValues = keyValues || [];
+
+    var _PeoplePickerTopId = $(&quot;div[title^='&quot; + fieldName + &quot;']&quot;).attr('id');
+    var _PeoplePickerObject = SPClientPeoplePicker.SPClientPeoplePickerDict[_PeoplePickerTopId];
+
+<span id='_PeoplePickerObject-OnUserResolvedClientScript'>    /**
+</span>     * Attach the function when specified people picker resolved person
+     */
+    _PeoplePickerObject.OnUserResolvedClientScript = function(){
+
+        var attachAccount;
+        if(this.TopLevelElementId.slice(-7) === 'TopSpan') {
+            var originDiv = $('#' + this.TopLevelElementId.replace('_TopSpan', ''));
+        }
+        var users = this.GetAllUserInfo();
+        if(users.length !== 0) {
+            for(var i = 0; i &lt; users.length; i++) {
+                var user = users[i];
+                for(var userProperty in user) {
+                    if(userProperty === 'Description') {
+                        attachAccount = user[userProperty];
+                        var attachUser = new Osram.UserInfo();
+                        //Setup attachUser to get properties
+                        attachUser.set_account(attachAccount);
+                        attachUser.set_async(false);
+                        attachUser.getUserProfilePropertiesFor();
+                        console.log(attachUser);
+                    }
+                }
+            }
+
+            //Confirm inputFields and keyValues length are same, if so, loop inputFields and show the keyValues
+            if(inputFields.length !== 0 &amp;&amp; keyValues.length !== 0 &amp;&amp; keyValues.length === inputFields.length) {
+                for(var i in inputFields) {
+                    $(&quot;input[title^='&quot; + inputFields[i] + &quot;']&quot;).val(attachUser._userProfileProperties[keyValues[i]]);
+                }
+                if(this.TopLevelElementId.slice(-7) === 'TopSpan' &amp;&amp; originDiv.attr('style') !== '') {
+                    originDiv.attr('style', '');
+                    originDiv.parent().find('.ms-formvalidation').remove();
+                    originDiv.next().blur();
+                }
+            } else {
+                console.log('Error!');
+            }
+        } else if(users.length === 0 &amp;&amp; this.TopLevelElementId.slice(-7) === 'TopSpan') {
+            originDiv.css('border-color', 'red');
+            originDiv.parent().append(&quot;&lt;span class='ms-formvalidation'&gt;&lt;br /&gt;The field is required.&lt;/span&gt;&quot;);
+        }
+    };
+}
+
+<span id='createListItem'>/**
+</span> * @class createListItem
+ * #Create item for specific SP list with given data
+ * @param  {String}   listTitle   The SharePoint list name
+ * @param  {String[]}   colName     The columns to insert data in
+ * @param  {String/Number/Boolean[]}   itemContent The content to insert to item columns
+ * @param  {Function} callback    The callback function
+ *
+ * #See the example:
+ *     createListItem('list', ['Title', 'Column'], ['item1', 'content'], function(){
+ *         doSomething;
+ *     });
+ */
+function createListItem(listTitle, colName, itemContent, callback) {
+
+    this.callback = callback;
+    //Locate list by listTitle
+    var clientContext = new SP.ClientContext();
+    var list = clientContext.get_web().get_lists().getByTitle(listTitle);
+
+    //Create list item
+    var newItem = list.addItem();
+    for (var i in colName) {
+        newItem.set_item(colName[i],itemContent[i]);
+    }
+    newItem.update();
+
+    clientContext.load(newItem);
+    clientContext.executeQueryAsync(
+        function() {
+            console.log('Item created. callback: ' + callback);
+            if(callback &amp;&amp; typeof(callback) === &quot;function&quot;) {
+                callback();
+            }
+        },
+        function (sender,args) {
+            alert('Item creation failed: ' + args.get_message() + '\n' + args.get_stackTrace());
+        }
+    );
+}
+
+<span id='updateListItem'>/**
+</span> * @class updateListItem
+ * #Update specific item in specific SP list with given data
+ * @param  {String}   listTitle   The SharePoint list name
+ * @param  {String[]}   colName     The columns to insert data in
+ * @param  {String/Number/Boolean[]}   itemContent The content to insert to item columns
+ * @param  {Function} callback    The callback function
+ *
+ * #See the example:
+ *     updateListItem('list', ['Title', 'Column'], ['item1', 'content'], function(){
+ *         doSomething;
+ *     });
+ */
+function updateListItem(listTitle, colName, itemContent, callback) {
+
+    console.log(colName);
+    console.log(itemContent);
+    this.callback = callback;
+    //Locate list by listTitle
+    var clientContext = new SP.ClientContext();
+    var list = clientContext.get_web().get_lists().getByTitle(listTitle);
+
+    //Update list item
+    var updateItem = list.getItemById(itemContent[0]);
+    for (i=1;i&lt;colName.length;i++) {
+        console.log(colName[i] + ', ' + itemContent[i]);
+        updateItem.set_item(colName[i],itemContent[i]);
+    }
+    updateItem.update();
+
+    clientContext.executeQueryAsync(
+        function() {
+            console.log('Item updated. callback: ' + callback);
+            if(callback &amp;&amp; typeof(callback) === &quot;function&quot;) {
+                callback();
+            }
+        },
+        function (sender,args) {
+            alert('Item updateing failed: ' + args.get_message() + '\n' + args.get_stackTrace());
+        }
+    );
+}
+
+<span id='deleteListItem'>/**
+</span> * @class deleteListItem
+ * #Delete specific items in specific SP list
+ * @param  {String}   listTitle The SharePoint list name
+ * @param  {Number[]}   listIDs   The item IDs to be delete
+ * @param  {Function} callback  The callback function
+ *
+ * #See the example:
+ *     deleteListItem('list', [1, 2, 3], function(){
+ *         doSomething;
+ *     });
+ */
+function deleteListItem(listTitle, listIDs, callback) {
+
+    this.callback = callback;
+    //Locate list by listTitle
+    var clientContext = new SP.ClientContext();
+    var list = clientContext.get_web().get_lists().getByTitle(listTitle);
+
+    //Delete list item
+    for (var i in listIDs) {
+        var deletingListItem = list.getItemById(listIDs[i]);
+        deletingListItem.deleteObject();
+    }
+
+    clientContext.executeQueryAsync(
+        function() {
+            console.log('Item deleted. callback: ' + callback);
+            if(callback &amp;&amp; typeof(callback) === &quot;function&quot;) {
+                callback();
+            }
+        },
+        function (sender,args) {
+            alert('Item deletion failed: ' + args.get_message() + '\n' + args.get_stackTrace());
+        }
+    );
+}
+
+<span id='getListItemsByKey'>/**
+</span> * @class getListItemsByKey
+ * #This is the very important function to retrieve data from a specific list with key value
+ * @param  {String}   listTitle   The SharePoint list needs to query
+ * @param  {String}   keyColName  The information query column
+ * @param  {String/Number/Boolean}   keyField    The information needs to query with
+ * @param  {String[]}   queryFields The information needs to query out
+ * @param  {Function} callback    The callback function once query succeeded
+ * @return {Object} collListItem is the return data, requires onQuerySuccedded function handel first
+ *
+ * #See the example:
+ *     getListItemsByKey('list', 'ID', 1, ['Title', 'Column'], function(){
+ *         doSomething;
+ *     });
+ */
+function getListItemsByKey(listTitle, keyColName, keyField, queryFields, callback) {
+
+    this.listTitle = listTitle;
+    this.keyColName = keyColName;
+    this.keyField = keyField || '';
+    this.queryFields = queryFields || ['Title'];
+    this.callback = callback;
+
+    //Locate list by listTitle
+    var clientContext = new SP.ClientContext();
+    var list = clientContext.get_web().get_lists().getByTitle(listTitle);
+
+    var camlQuery = new SP.CamlQuery();
+    if(keyField !== '') {
+        camlQuery.set_viewXml(
+            '&lt;View&gt;&lt;Query&gt;&lt;Where&gt;&lt;Eq&gt;&lt;FieldRef Name=\'' + keyColName + '\'/&gt;&lt;Value Type=\'Text\'&gt;' + keyField + '&lt;/Value&gt;&lt;/Eq&gt;&lt;/Where&gt;&lt;/Query&gt;&lt;/View&gt;'
+        );
+    } else {
+        camlQuery.set_viewXml(
+            '&lt;View&gt;&lt;Query&gt;&lt;Where&gt;&lt;IsNotNull&gt;&lt;FieldRef Name=\'' + keyColName + '\'/&gt;&lt;/IsNotNull&gt;&lt;/Where&gt;&lt;/Query&gt;&lt;/View&gt;'
+        );
+    }
+    this.collListItem = list.getItems(camlQuery);
+
+    clientContext.load(collListItem);
+    clientContext.executeQueryAsync(onQuerySucceeded, onQueryFailed);
+}
+
+<span id='getListItemsByKey-method-onQuerySucceded'>/**
+</span> * @method onQuerySucceded
+ * Execute if getListItemsByKey succeeded, callback function inheritance from {@link getListItemsByKey}
+ * @return {String[]}        Return all list items contents
+ */
+function onQuerySucceeded(sender, args) {
+    var listItemInfos = [];
+    var listItemEnumerator = collListItem.getEnumerator();
+
+    //console.log(queryFields);
+    //Enumerate the query result list items
+    while (listItemEnumerator.moveNext()) {
+        var listItem = listItemEnumerator.get_current();
+        var listItemInfo = [];
+        for (var i in queryFields) {
+            listItemInfo.push(listItem.get_item(queryFields[i]));
+        }
+        listItemInfos.push(listItemInfo);
+    }
+    //console.log(listItemInfos);
+
+    if(callback &amp;&amp; typeof(callback) === 'function') {
+        callback(listItemInfos);
+    } else {
+        return listItemInfos;
+    }
+}
+
+<span id='getListItemsByKey-method-onQueryFailed'>/**
+</span> * @method onQueryFailed
+ * Execute if {@link getListItemsByKey} failed
+ * @param  {Object} args   The error message object
+ */
+function onQueryFailed(sender, args){
+    alert('Request failed.' + args.get_message() + '\n' + args.get_stackTrace());
+}
+
+<span id='MaxnTotalCalc'>/**
+</span> * @class MaxnTotalCalc
+ * Calculate the max number and result in a form list
+ * @param {String} itemList  The list contains calculate numbers
+ * @param {String} calcField The column contains calculate numbers
+ * @return {Number[]} Return 2 number values in array, first one is Max number, second one is Total number.
+ *
+ * #See the example:
+ *     MaxnTotalCalc('formList', 'numbers');
+ */
+function MaxnTotalCalc(itemList, calcField) {
+
+    //Push item list calculation fields into array
+    var calcIndex = $(&quot;#&quot; + itemList + &quot; th[title='&quot; + calcField + &quot;']&quot;).index();
+    var calcRows = $('#' + itemList + ' tr:last').index();
+    var numberList = [];
+    for (i=1;i&lt;=calcRows;i++) {
+        numberList.push(parseFloat($('#' + itemList + ' tr:eq(' + i + ') td:eq(' + calcIndex + ')').text()));
+    }
+
+    //Calculate the Max and Sum result and return
+    numberList.sort(function(a, b){
+        return a - b;
+    });
+    var maxResult = numberList[numberList.length-1];
+    var sumResult = numberList.reduce(function(x, y) {
+        return x + y;
+    });
+    return [maxResult.toFixed(2), sumResult.toFixed(2)];
+}
+
+<span id='initializePeoplePicker'>/**
+</span> * @class initializePeoplePicker
+ * The Microsoft JSOM function to initial a self designed people picker
+ * @param  {String}   peoplePickerId The HTML id of text input
+ * @param  {Function} callback       The callback function
+ *
+ * #See the example:
+ *     initializePeoplePicker('myInput', function(){
+ *         doSomething;
+ *     });
+ */
+function initializePeoplePicker(peoplePickerId, callback) {
+
+    //Create a schema to store picker properties, and set the properties.
+    var schema = {};
+    schema['PrincipalAccountType'] = 'User,DL,SecGroup,SPGroup';
+    schema['SearchPrincipalSource'] = 15;
+    schema['ResolvePrincipalSource'] = 15;
+    schema['AllowMultipleValues'] = false;
+    schema['MaximumEntitySuggestions'] = 30;
+    schema['Width'] = '370px';
+
+    //Render and initialize the picker. Pass the ID of the DOM element that contains the picker, an array of initial PickerEntity objects to set the picker value, and a schema that defines picker properties.
+    this.SPClientPeoplePicker_InitStandaloneControlWrapper(peoplePickerId, null, schema);
+
+    if(callback &amp;&amp; typeof(callback) === 'function') {
+        callback();
+    }
+}</pre>
+</body>
+</html>

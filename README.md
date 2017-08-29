@@ -30,3 +30,6 @@ GitHub is only the place for my development storage before final deploy to Share
 * Osram.UserInfo.CurrentUser.js
 * FormActions.js
 
+#### 4. JavaScript document:
+>Document to describe detail usage of JavaScript functions, behaviors and actions.
+##### Already created as HTML source via JSDuck, open it here: /docs/index.html
