@@ -37,14 +37,17 @@ var RIDText,
  * ##Several key rules:
  *     - Default HTML forms include: NewForm, DispForm and EditForm
  *     - Use jQuery selectors and value retrieve and setting
- *     - To enable customized code working, SP.SOD.executeFunc('sp.js','SP.ClientContext',init); must include in forms
+ *     - To enable customized code, SP.SOD.executeFunc('sp.js','SP.ClientContext',init); must include in forms
  *     - Ideally one Init function already enough for all 3 default HTML forms, to reduce the execution effort
- * @return {String} Rendering form designed as the way developer like
+ * @return {Object} Rendering form designed as the way developer like
  *
  * @requires SP.ClientContext
  * @requires SP.UI.ModalDialog
+ * @requires Osram.UserInfo
+ * @requires Osram.UserInfo.CurrentUser
  * @requires ledvance.UI
  * @requires moment
+ * @requires numeral
  * @requires getListItemsByKey
  * @requires createListItem
  * @requires updateListItem
@@ -65,7 +68,7 @@ function init() {
     ledvance.UI.renderLayout();
     /**
      * SharePoint predefined the WaitScreen, define the customize variable to include it into form
-     * @type {String} SharePoint defined ModalDialog
+     * @type {Object} SharePoint defined ModalDialog
      */
     WaitingDialog = SP.UI.ModalDialog.showWaitScreenWithNoClose("Wait for a moment please...", "It shouldn't be very long.", 200, 500);
 
@@ -139,7 +142,7 @@ function init() {
     });
 
     /**
-     * @event Attachments_Show
+     * @event Attachments_show
      * Show Attachments list only when there is Attachment(s) inside.
      */
     if($('#idAttachmentsTable').children().length === 0) {
@@ -303,7 +306,7 @@ function init() {
     });
 
     /**
-     * @event selectable_selectable
+     * @event selectable
      * Enable select exists row(s) in items list
      */
     $('.selectable').selectable({
@@ -322,7 +325,7 @@ function init() {
     });
 
     /**
-     * @event AmountList6_Change
+     * @event AmountList6_change
      * Basic calculation for Amount
      */
     $('#AmountList6').change(function(){
@@ -471,7 +474,12 @@ function init() {
 
     /**
      * @property form_Content
-     * Initial the default form by different conditions - New, Edit, Disp
+     * ####Initial the default form by different conditions - New, Edit, Disp
+     *     - Confirm if "Request ID" or "RID" value exists
+     *     - If not, confirm current opening is NewForm
+     *     - If yes, check "RID" span has any child
+     *     - If yes and span do has child, confirm current opening is EditForm
+     *     - Otherwise, confirm current opening is DispForm (ReadOnly)
      */
     if($("span[data-displayname='Request ID']").children().length !== 0 && $("input[title^='Request ID']").val() === '') {
 
@@ -702,14 +710,14 @@ function PreSaveAction(){
  * @class updateAutoNumber
  * #Update the autoNumber + 1 back to SharePoint list item.
  *
- * The autoNumber list must has the column name **"Auto Number"**, otherwise the function will not work.
+ * *The autoNumber list must has the column name **"Auto Number"**, otherwise the function will not work.*
  *
- * @param {String} listTitle Target SharePoint list title
- * @param {Number} itemId Item ID to update
- * @param {Number} num The autoNumber needs to update
- * @param {Function} callback The callback function to handle other works in form
+ * @param {String} listTitle >Target SharePoint list title
+ * @param {Number} itemId >Item ID to update
+ * @param {Number} num >The autoNumber needs to update
+ * @param {Function} callback >The callback function to handle other works in form
  *
- * @requires updateListItem
+ * @uses updateListItem
  *
  * #See the example:
  *     updateAutoNumber('list', 1, 66, function(){
@@ -731,10 +739,10 @@ function updateAutoNumber(listTitle, itemId, num, callback) {
  * @class createRID
  * #Create Request ID (RID) with 2 different types
  *
- * @param  {String}   appPrefix Prefix to identify current application
- * @param  {String}   type="time", "autoNumber"      Predefined 2 types: time and autoNumber
- * @param  {Function} callback  Callback function after RID generation
- * @return {String}             New Request ID (RID)
+ * @param  {String}   appPrefix >Prefix to identify current application
+ * @param  {String}   type      >Predefined 2 types: time and autoNumber
+ * @param  {Function} callback  >Callback function after RID generation
+ * @return {String}             >New Request ID (RID)
  *
  * #See the example 1 for type "time":
  *     createRID('prefix', 'time', function(){
@@ -768,8 +776,8 @@ function createRID(appPrefix, type, callback) {
 /**
  * @class setUserFieldValue
  * #Input user field by specifc user account
- * @param {String} fieldName The user field title
- * @param {String} userName  The user account needs to insert
+ * @param {String} fieldName >The user field title
+ * @param {String} userName  >The user account needs to insert
  *
  * #See the example:
  *     setUserFieldValue('PeoplePicker', 'domain\\username');
@@ -786,10 +794,10 @@ function setUserFieldValue(fieldName, userName) {
 /**
  * @class getUserFieldValue
  * #Retrieve user field value matches returnProperty
- * @param  {String}   fieldName      The user field title
- * @param  {String}   returnProperty The property needs to retrieve
- * @param  {Function} callback       The callback function
- * @return {String}                  The content of returnProperty
+ * @param  {String}   fieldName      >The user field title
+ * @param  {String}   returnProperty >The property needs to retrieve
+ * @param  {Function} callback       >The callback function
+ * @return {String}                  >The content of returnProperty
  *
  * #See the example:
  *     getUserFieldValue('PeoplePicker', 'Description', function(){
@@ -817,9 +825,9 @@ function getUserFieldValue(fieldName, returnProperty, callback) {
 /**
  * @class attachUserFieldFunction
  * #Attach function to specific user field
- * @param  {String} fieldName   The user field title
- * @param  {String[]} inputFields The fields array to input properties
- * @param  {String[]} keyValues   The values arrya to input into specific fields
+ * @param  {String} fieldName   >The user field title
+ * @param  {String[]} inputFields >The fields array to input properties
+ * @param  {String[]} keyValues   >The values arrya to input into specific fields
  *
  * #See the example:
  *     attachUserFieldFunction('PeoplePicker', ['field1', 'field2'], ['value1', 'value2']);
@@ -829,11 +837,18 @@ function attachUserFieldFunction(fieldName, inputFields, keyValues) {
     this.inputFields = inputFields || [];
     this.keyValues = keyValues || [];
 
+    /**
+     * @property _PeoplePickerObject
+     * ####The real people picker location
+     */
     var _PeoplePickerTopId = $("div[title^='" + fieldName + "']").attr('id');
     var _PeoplePickerObject = SPClientPeoplePicker.SPClientPeoplePickerDict[_PeoplePickerTopId];
 
     /**
-     * Attach the function when specified people picker resolved person
+     * @property OnUserResolvedClientScript
+     * ####Attach the function when specified people picker resolved person
+     *     - This is the place to attach client script, e.g.: JavaScript, VBScript...
+     *     - After the user resolved, this script will execute automatically
      */
     _PeoplePickerObject.OnUserResolvedClientScript = function(){
 
@@ -881,10 +896,10 @@ function attachUserFieldFunction(fieldName, inputFields, keyValues) {
 /**
  * @class createListItem
  * #Create item for specific SP list with given data
- * @param  {String}   listTitle   The SharePoint list name
- * @param  {String[]}   colName     The columns to insert data in
- * @param  {String/Number/Boolean[]}   itemContent The content to insert to item columns
- * @param  {Function} callback    The callback function
+ * @param  {String}   listTitle   >The SharePoint list name
+ * @param  {String[]}   colName     >The columns to insert data in
+ * @param  {String/Number/Boolean[]}   itemContent >The content to insert to item columns
+ * @param  {Function} callback    >The callback function
  *
  * #See the example:
  *     createListItem('list', ['Title', 'Column'], ['item1', 'content'], function(){
@@ -922,10 +937,10 @@ function createListItem(listTitle, colName, itemContent, callback) {
 /**
  * @class updateListItem
  * #Update specific item in specific SP list with given data
- * @param  {String}   listTitle   The SharePoint list name
- * @param  {String[]}   colName     The columns to insert data in
- * @param  {String/Number/Boolean[]}   itemContent The content to insert to item columns
- * @param  {Function} callback    The callback function
+ * @param  {String}   listTitle   >The SharePoint list name
+ * @param  {String[]}   colName     >The columns to insert data in
+ * @param  {String/Number/Boolean[]}   >itemContent The content to insert to item columns
+ * @param  {Function} callback    >The callback function
  *
  * #See the example:
  *     updateListItem('list', ['Title', 'Column'], ['item1', 'content'], function(){
@@ -965,9 +980,9 @@ function updateListItem(listTitle, colName, itemContent, callback) {
 /**
  * @class deleteListItem
  * #Delete specific items in specific SP list
- * @param  {String}   listTitle The SharePoint list name
- * @param  {Number[]}   listIDs   The item IDs to be delete
- * @param  {Function} callback  The callback function
+ * @param  {String}   listTitle >The SharePoint list name
+ * @param  {Number[]}   listIDs   >The item IDs to be delete
+ * @param  {Function} callback  >The callback function
  *
  * #See the example:
  *     deleteListItem('list', [1, 2, 3], function(){
@@ -1003,11 +1018,11 @@ function deleteListItem(listTitle, listIDs, callback) {
 /**
  * @class getListItemsByKey
  * #This is the very important function to retrieve data from a specific list with key value
- * @param  {String}   listTitle   The SharePoint list needs to query
- * @param  {String}   keyColName  The information query column
- * @param  {String/Number/Boolean}   keyField    The information needs to query with
- * @param  {String[]}   queryFields The information needs to query out
- * @param  {Function} callback    The callback function once query succeeded
+ * @param  {String}   listTitle   >The SharePoint list needs to query
+ * @param  {String}   keyColName  >The information query column
+ * @param  {String/Number/Boolean}   keyField    >The information needs to query with
+ * @param  {String[]}   queryFields >The information needs to query out
+ * @param  {Function} callback    >The callback function once query succeeded
  * @return {Object} collListItem is the return data, requires onQuerySuccedded function handel first
  *
  * #See the example:
@@ -1046,7 +1061,7 @@ function getListItemsByKey(listTitle, keyColName, keyField, queryFields, callbac
 /**
  * @method onQuerySucceded
  * Execute if getListItemsByKey succeeded, callback function inheritance from {@link getListItemsByKey}
- * @return {String[]}        Return all list items contents
+ * @return {String[]}        >Return all list items contents
  */
 function onQuerySucceeded(sender, args) {
     var listItemInfos = [];
@@ -1074,7 +1089,7 @@ function onQuerySucceeded(sender, args) {
 /**
  * @method onQueryFailed
  * Execute if {@link getListItemsByKey} failed
- * @param  {Object} args   The error message object
+ * @param  {Object} args   >The error message object
  */
 function onQueryFailed(sender, args){
     alert('Request failed.' + args.get_message() + '\n' + args.get_stackTrace());
@@ -1083,8 +1098,8 @@ function onQueryFailed(sender, args){
 /**
  * @class MaxnTotalCalc
  * Calculate the max number and result in a form list
- * @param {String} itemList  The list contains calculate numbers
- * @param {String} calcField The column contains calculate numbers
+ * @param {String} itemList  >The list contains calculate numbers
+ * @param {String} calcField >The column contains calculate numbers
  * @return {Number[]} Return 2 number values in array, first one is Max number, second one is Total number.
  *
  * #See the example:
@@ -1114,8 +1129,8 @@ function MaxnTotalCalc(itemList, calcField) {
 /**
  * @class initializePeoplePicker
  * The Microsoft JSOM function to initial a self designed people picker
- * @param  {String}   peoplePickerId The HTML id of text input
- * @param  {Function} callback       The callback function
+ * @param  {String}   peoplePickerId >The HTML id of text input
+ * @param  {Function} callback       >The callback function
  *
  * #See the example:
  *     initializePeoplePicker('myInput', function(){
