@@ -1,31 +1,27 @@
 /**
- * @author Zhang, Wei - Michael
- * Several SharePoint functions cannot initial in strict mode
- * Setup for global vars
- */
-/**
- * Prepare for list items deleting
+ * Setup for global vars: Prepare for list items deleting
  * @type {Array}
  */
 var itemListIDs = [];
 /**
- * Save for approver list items
+ * Setup for global vars: Save for approver list items
  * @type {Array}
  */
 var approverListIDs = [];
 /**
- * Temporary BG list to retrieve from SharePoint list
+ * Setup for global vars: Temporary BG list to retrieve from SharePoint list
  * @type {Array}
  */
 var currencyList = [];
 /**
- * Temporary account list to retrieve from SharePoint list
+ * Setup for global vars: Temporary account list to retrieve from SharePoint list
  * @type {Array}
  */
 var accountList = [];
 /**
  * @property RIDText, autoNumber, WaitingDialog -
- * All the key variables in form
+ * Setup for global vars: All the key variables in form
+ * @type {String}
  */
 var RIDText,
     autoNumber,
@@ -39,13 +35,14 @@ var RIDText,
  *     - Use jQuery selectors and value retrieve and setting
  *     - To enable customized code, SP.SOD.executeFunc('sp.js','SP.ClientContext',init); must include in forms
  *     - Ideally one Init function already enough for all 3 default HTML forms, to reduce the execution effort
+ * @author Zhang, Wei - Michael
+ * Several SharePoint functions cannot initial in strict mode
  * @return {Object} Rendering form designed as the way developer like
  *
  * @requires SP.ClientContext
- * @requires SP.UI.ModalDialog
  * @requires Osram.UserInfo
  * @requires Osram.UserInfo.CurrentUser
- * @requires ledvance.UI
+ * @requires datatables
  * @requires moment
  * @requires numeral
  * @requires getListItemsByKey
@@ -59,21 +56,25 @@ var RIDText,
  * @requires attachUserFieldFunction
  * @requires MaxnTotalCalc
  * @requires initializePeoplePicker
+ *
+ * @since FormActions 1.0 beta
  */
 function init() {
     /**
      * @event renderLayout
      * ledvance.UI.js already included inside HTML forms, renderLayout to initial the form
+     * @requires ledvance.UI
      */
     ledvance.UI.renderLayout();
     /**
      * SharePoint predefined the WaitScreen, define the customize variable to include it into form
      * @type {Object} SharePoint defined ModalDialog
+     * @requires SP.UI.ModalDialog
      */
     WaitingDialog = SP.UI.ModalDialog.showWaitScreenWithNoClose("Wait for a moment please...", "It shouldn't be very long.", 200, 500);
 
     /**
-     * @event fullscreenmodeBtn_Click
+     * @event fullscreenmodeBtn_click
      * Execute SharePoint *"Full Screen Mode"*
      */
     $('#ctl00_fullscreenmodeBtn').click();
@@ -160,7 +161,8 @@ function init() {
     /**
      * @event initializePeoplePicker_ApproverPicker
      * Initial people picker in dialog with function {@link initializePeoplePicker}
-     * 
+     *
+     * @since FormActions 1.2 beta
      */
     if($('#ApproverPicker').length > 0) {
         initializePeoplePicker('ApproverPicker', function(){
@@ -214,7 +216,7 @@ function init() {
                             if(arr[2] === null) {
                                 arr[2] = '';
                             }
-                            $('#AmountList3').append("<option value='" + arr[1] + "' Account='" + arr[0] + "'>" + arr[0] + " - " + arr[1] + " - " + arr[2] +"</option>");
+                            $('#TypeList tbody').append("<tr><td>" + arr[0] + "</td><td>" + arr[1] + "</td><td>" + arr[2] +"</td></tr>");
                         }
                     }
                 });
@@ -242,7 +244,7 @@ function init() {
                             if(arr[2] === null) {
                                 arr[2] = '';
                             }
-                            $('#AmountList3').append("<option value='" + arr[1] + "' Account='" + arr[0] + "'>" + arr[0] + " - " + arr[1] + " - " + arr[2] +"</option>");
+                            $('#TypeList tbody').append("<tr><td>" + arr[0] + "</td><td>" + arr[1] + "</td><td>" + arr[2] +"</td></tr>");
                         }
                     }
                 });
@@ -336,16 +338,63 @@ function init() {
     });
 
     /**
-     * @event AmountList3_change
-     * Fill in the PCV Account
+     * @event AmountList3_click
+     * Open the account type list dialog
      */
-    $('#AmountList3').change(function(){
-        var selectedValue = $(this).val();
-        $(this).children().each(function(){
-            if($(this).val() === selectedValue) {
-                $('#AmountList2').val($(this).attr('Account'));
-            }
-        });
+    $('#AmountList3').click(function() {
+        $('#TypeList').dialog('open');
+    });
+
+    /**
+     * @method datatable_dialog
+     * Dialog to display datatable and select
+     * @param  {Boolean} autoOpen Dialog open automatically or not
+     * @param  {Number} width Dialog width
+     * @param  {Boolean} scrollbars Dialog shows scroll bars or not
+     * @param  {Boolean} modal Dialog shows as modal window or not
+     * @param  {Function/Object} open Dialog open method setup
+     * @param  {Function/Object} close Dialog close method setup
+     */
+    $('.datatable').dialog({
+        autoOpen: false,
+        width: 600,
+        scrollbars: false,
+        modal: true,
+        open: function () {
+            /**
+             * @method accountData
+             * Define the datatable
+             * @type {Object}
+             *
+             * @since FormActions 1.3 beta
+             */
+            var accountData = $('.datatable table').DataTable({
+                select: 'single'
+            });
+            /**
+             * @event accountData_select
+             * Listen the datatable **"select"** event and put the values into inputs
+             * @param  {Object} e        Mandotary parameter, element
+             * @param  {Object} dt       Mandotary parameter, datatable
+             * @param  {String} type     Mandotary parameter, selected type
+             * @param  {Number} indexes  Mandotary parameter, selected index
+             * @return {Array}  dataRow  The real selected data
+             *
+             * @since FormActions 1.3 beta
+             */
+            accountData.on('select', function (e, dt, type, indexes) {
+                if(type === 'row') {
+                    var dataRow = accountData.rows(indexes).data()[0];
+                    $('#AmountList2').val(dataRow[0]);
+                    $('#AmountList3').val(dataRow[1]);
+                    accountData.destroy();
+                    $('#TypeList').dialog('close');
+                }
+            });
+        },
+        close: function() {
+            $('.datatable tbody').find('tr').remove();
+        }
     });
 
     /**
@@ -375,7 +424,7 @@ function init() {
     });
 
     /**
-     * @method dialog
+     * @method dialog_dialog
      * Dialog to Add or Edit list item
      * @param  {Boolean} autoOpen Dialog open automatically or not
      * @param  {Number} width Dialog width
@@ -518,6 +567,7 @@ function init() {
                 /**
                  * @event updateAutoNumber_PCV
                  * Last update SP list item with autoNumber + 1, see details: {@link updateAutoNumber}
+                 * @since FormActions 1.1 beta
                  */
                 updateAutoNumber('Finance Approvers', 1, autoNumber, function(){
                     /**
@@ -533,6 +583,7 @@ function init() {
                         /**
                          * @event attachUserFieldFunction_PayTo
                          * Attach the automatically get specific user information function to 'Pay To' people picker, see detials: {@link attachUserFieldFunction}
+                         * @since FormActions 1.2 beta
                          */
                         attachUserFieldFunction('Pay To', ['Cost Center', 'Employee Number'], ['costCenter', 'employeeNumber']);
                         /**
@@ -718,10 +769,11 @@ function PreSaveAction(){
  * @param {Function} callback >The callback function to handle other works in form
  *
  * @uses updateListItem
+ * @since FormActions 1.1 beta
  *
  * #See the example:
  *     updateAutoNumber('list', 1, 66, function(){
- *         otherWorks();
+ *         doSomething;
  *     });
  */
 function updateAutoNumber(listTitle, itemId, num, callback) {
@@ -743,6 +795,8 @@ function updateAutoNumber(listTitle, itemId, num, callback) {
  * @param  {String}   type      >Predefined 2 types: time and autoNumber
  * @param  {Function} callback  >Callback function after RID generation
  * @return {String}             >New Request ID (RID)
+ *
+ * @since FormActions 1.0 beta
  *
  * #See the example 1 for type "time":
  *     createRID('prefix', 'time', function(){
@@ -779,6 +833,8 @@ function createRID(appPrefix, type, callback) {
  * @param {String} fieldName >The user field title
  * @param {String} userName  >The user account needs to insert
  *
+ * @since FormActions 1.0 beta
+ *
  * #See the example:
  *     setUserFieldValue('PeoplePicker', 'domain\\username');
  */
@@ -798,6 +854,8 @@ function setUserFieldValue(fieldName, userName) {
  * @param  {String}   returnProperty >The property needs to retrieve
  * @param  {Function} callback       >The callback function
  * @return {String}                  >The content of returnProperty
+ *
+ * @since FormActions 1.0 beta
  *
  * #See the example:
  *     getUserFieldValue('PeoplePicker', 'Description', function(){
@@ -828,6 +886,8 @@ function getUserFieldValue(fieldName, returnProperty, callback) {
  * @param  {String} fieldName   >The user field title
  * @param  {String[]} inputFields >The fields array to input properties
  * @param  {String[]} keyValues   >The values arrya to input into specific fields
+ *
+ * @since FormActions 1.2 beta
  *
  * #See the example:
  *     attachUserFieldFunction('PeoplePicker', ['field1', 'field2'], ['value1', 'value2']);
@@ -901,6 +961,8 @@ function attachUserFieldFunction(fieldName, inputFields, keyValues) {
  * @param  {String/Number/Boolean[]}   itemContent >The content to insert to item columns
  * @param  {Function} callback    >The callback function
  *
+ * @since FormActions 1.0 beta
+ *
  * #See the example:
  *     createListItem('list', ['Title', 'Column'], ['item1', 'content'], function(){
  *         doSomething;
@@ -941,6 +1003,8 @@ function createListItem(listTitle, colName, itemContent, callback) {
  * @param  {String[]}   colName     >The columns to insert data in
  * @param  {String/Number/Boolean[]}   >itemContent The content to insert to item columns
  * @param  {Function} callback    >The callback function
+ *
+ * @since FormActions 1.0 beta
  *
  * #See the example:
  *     updateListItem('list', ['Title', 'Column'], ['item1', 'content'], function(){
@@ -984,6 +1048,8 @@ function updateListItem(listTitle, colName, itemContent, callback) {
  * @param  {Number[]}   listIDs   >The item IDs to be delete
  * @param  {Function} callback  >The callback function
  *
+ * @since FormActions 1.0 beta
+ *
  * #See the example:
  *     deleteListItem('list', [1, 2, 3], function(){
  *         doSomething;
@@ -1025,6 +1091,8 @@ function deleteListItem(listTitle, listIDs, callback) {
  * @param  {Function} callback    >The callback function once query succeeded
  * @return {Object} collListItem is the return data, requires onQuerySuccedded function handel first
  *
+ * @since FormActions 1.0 beta
+ *
  * #See the example:
  *     getListItemsByKey('list', 'ID', 1, ['Title', 'Column'], function(){
  *         doSomething;
@@ -1062,6 +1130,8 @@ function getListItemsByKey(listTitle, keyColName, keyField, queryFields, callbac
  * @method onQuerySucceded
  * Execute if getListItemsByKey succeeded, callback function inheritance from {@link getListItemsByKey}
  * @return {String[]}        >Return all list items contents
+ *
+ * @since FormActions 1.0 beta
  */
 function onQuerySucceeded(sender, args) {
     var listItemInfos = [];
@@ -1090,6 +1160,8 @@ function onQuerySucceeded(sender, args) {
  * @method onQueryFailed
  * Execute if {@link getListItemsByKey} failed
  * @param  {Object} args   >The error message object
+ *
+ * @since FormActions 1.0 beta
  */
 function onQueryFailed(sender, args){
     alert('Request failed.' + args.get_message() + '\n' + args.get_stackTrace());
@@ -1101,6 +1173,8 @@ function onQueryFailed(sender, args){
  * @param {String} itemList  >The list contains calculate numbers
  * @param {String} calcField >The column contains calculate numbers
  * @return {Number[]} Return 2 number values in array, first one is Max number, second one is Total number.
+ *
+ * @since FormActions 1.0 beta
  *
  * #See the example:
  *     MaxnTotalCalc('formList', 'numbers');
@@ -1131,6 +1205,8 @@ function MaxnTotalCalc(itemList, calcField) {
  * The Microsoft JSOM function to initial a self designed people picker
  * @param  {String}   peoplePickerId >The HTML id of text input
  * @param  {Function} callback       >The callback function
+ *
+ * @since FormActions 1.2 beta
  *
  * #See the example:
  *     initializePeoplePicker('myInput', function(){

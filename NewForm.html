@@ -1,7 +1,9 @@
 <link href="https://lightweb-app02.osram.com/tools/sites/CDN/jquery-ui-1.12.0/jquery-ui.min.css" rel="stylesheet" />
 <link href="https://lightweb-app02.osram.com/tools/sites/CDN/ledvance.ui.css" rel="stylesheet" />
+<link href="https://lightweb-app02.osram.com/tools/sites/CDN/DataTables/datatables.min.css" rel="stylesheet" />
 <script src="https://lightweb-app02.osram.com/tools/sites/CDN/jquery-ui-1.12.0/jquery-ui.min.js"></script>
 <script src="https://lightweb-app02.osram.com/tools/sites/CDN/ledvance.ui.js"></script>
+<script src="https://lightweb-app02.osram.com/tools/sites/CDN/DataTables/datatables.min.js"></script>
 <script src="https://lightweb-app02.osram.com/tools/sites/CDN/Osram.UserInfo.js"></script>
 <script src="https://lightweb-app02.osram.com/tools/sites/CDN/Osram.UserInfo.CurrentUser.js"></script>
 <script src="https://lightweb-app02.osram.com/tools/sites/CDN/moment.min.js"></script>
@@ -81,9 +83,22 @@
             </tr>
             <tr>
                 <th class="fieldName">Expense Type: </th>
-                <td><select id="AmountList3" class="text ms-long Required">
-                    <option selected="selected" value=""></option>
-                </select></td>
+                <td><input id="AmountList3" type="text" class="text ms-long Required" />
+                    <input type="button" value="Type List" />
+                    <div id="TypeList" class="datatable">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Account</th>
+                                    <th>Description(English)</th>
+                                    <th>Description(Locale)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
             </tr>
             <tr>
                 <th class="fieldName">Description: </th>
