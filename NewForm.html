@@ -1,20 +1,22 @@
-<link href="https://lightweb-app02.osram.com/tools/sites/CDN/jquery-ui-1.12.0/jquery-ui.min.css" rel="stylesheet" />
-<link href="https://lightweb-app02.osram.com/tools/sites/CDN/ledvance.ui.css" rel="stylesheet" />
-<script src="https://lightweb-app02.osram.com/tools/sites/CDN/jquery-ui-1.12.0/jquery-ui.min.js"></script>
-<script src="https://lightweb-app02.osram.com/tools/sites/CDN/ledvance.ui.js"></script>
-<script src="https://lightweb-app02.osram.com/tools/sites/CDN/Osram.UserInfo.js"></script>
-<script src="https://lightweb-app02.osram.com/tools/sites/CDN/Osram.UserInfo.CurrentUser.js"></script>
-<script src="https://lightweb-app02.osram.com/tools/sites/CDN/moment.min.js"></script>
-<script src="https://lightweb-app02.osram.com/tools/sites/CDN/numeral.js"></script>
-<script src="/content/10000510/PCVWR/SiteAssets/FormActions.js"></script>
+<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/jquery-ui-1.12.0/jquery-ui.min.css" rel="stylesheet" />
+<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/ledvance.ui.css" rel="stylesheet" />
+<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/DataTables/datatables.min.css" rel="stylesheet" />
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN//jquery-2.2.4.min.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/jquery-ui-1.12.0/jquery-ui.min.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/ledvance.ui.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/DataTables/datatables.min.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/Osram.UserInfo.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/Osram.UserInfo.CurrentUser.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/moment.min.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/numeral.js"></script>
+<!-- <script src="https://cwe01-dv.ledvance.com/cwe/web/public/javascripts/cweclient.js"></script> -->
+<script src="https://ledvance365.sharepoint.com/sites/APR/SiteAssets/FormActions.js"></script>
 <script type="text/javascript">
     $(document).ready(function() {
         SP.SOD.executeFunc('sp.js','SP.ClientContext',init);
-        //When Document is rendered call your own code which placed in a separate file
-        //init(); -- This is a second call, not necessary.
     });
 </script>
-<h1>New Petty Cash Voucher: </h1><span class="spdatacell" data-displayname="Form"></span>
+<h1>New Payment Request: </h1>
 <table id="MainInfo" cellspacing="5" cellpadding="5">
     <tbody>
     <tr>
@@ -24,24 +26,43 @@
         <td><span class="spdatacell" data-displayname="Request Date"></span></td>
     </tr>
     <tr>
-        <td class="fieldName"><b>BG:</b></td>
+        <td class="fieldName"><b><font color="red">*</font>BG:</b></td>
         <td><select title="BG Replace Field" id="BG_Replace_Field_DropDownChoice">
             <option selected="selected" value=""></option>
         </select></td>
-        <td class="fieldName"><b>Company Code:</b></td>
+        <td class="fieldName"><b><font color="red">*</font>Company Code:</b></td>
         <td><span class="spdatacell" data-displayname="Company Code"></span></td>
     </tr>
     <tr>
-        <td class="fieldName"><b>Claim Type:</b></td>
-        <td><span class="spdatacell" data-displayname="Claim Type"></span></td>
-        <td class="fieldName"><b>Pay To:</b></td>
-        <td><span class="spdatacell" data-displayname="Pay To"></span></td>
+		<td class="fieldName"><b><font color="red">*</font>Applicant:</b></td>
+		<td><span class="spdatacell" data-displayname="Applicant"></span></td>
+		<td class="fieldName"><b>PO (If necessary):</b></td>
+		<td><span class="spdatacell" data-displayname="PO"></span></td>
     </tr>
     <tr>
-        <td class="fieldName changeLabel"><b>Cost Center:</b></td>
-        <td><span class="spdatacell" data-displayname="Cost Center"></span><span class="spdatacell hidden" data-displayname="Order Number"></span></td>
-        <td class="fieldName"><b>Employee Number:</b></td>
-        <td><span class="spdatacell" data-displayname="Employee Number"></span></td>
+        <td class="fieldName"><b><font color="red">*</font>Claim Type:</b></td>
+        <td><span class="spdatacell" data-displayname="Claim Type"></span></td>
+        <td class="fieldName" id="coSelect"><b><font color="red">*</font>
+        	<select style="text-align: right;">
+        		<option value="Cost Center" selected="selected">Cost Center:</option>
+        		<option value="Order Number">Order Number:</option>
+        	</select></b></td>
+        <td>
+        	<span class="spdatacell" data-displayname="Cost Center"></span>
+			<span class="spdatacell" data-displayname="Order Number" style="display: none;"></span>
+        </td>
+    </tr>
+    <tr>
+        <td class="fieldName"><b><font color="red">*</font>Vendor / Customer Code:</b></td>
+        <td><span class="spdatacell" data-displayname="Vendor Code"></span></td>
+        <td class="fieldName"><b><font color="red">*</font>Vendor / Customer Name:</b></td>
+        <td><span class="spdatacell" data-displayname="Vendor Name"></span></td>
+    </tr>
+    <tr>
+    	<td class="fieldName"><b>Invoice No. (If necessary):</b></td>
+    	<td><span class="spdatacell" data-displayname="Invoice Number"></span></td>
+    	<td></td>
+    	<td></td>
     </tr>
     <tr class="trHide">
         <td></td>
@@ -75,31 +96,16 @@
                 <th class="fieldName">Request ID: </th>
                 <td><input id="AmountList1" type="text" class="RID ms-long" disabled="disabled" /><p class="Status"></p></td>
             </tr>
-            <tr class="trHide">
-                <th></th>
-                <td><input id="AmountList2" type="text" class="text ms-long" /></td>
-            </tr>
-            <tr>
-                <th class="fieldName">Expense Type: </th>
-                <td><select id="AmountList3" class="text ms-long Required">
-                    <option selected="selected" value=""></option>
-                </select></td>
-            </tr>
-            <tr>
                 <th class="fieldName">Description: </th>
-                <td><textarea id="AmountList4" rows="3" class="text ms-long Required"></textarea></td>
-            </tr>
-            <tr>
-                <th class="fieldName">Invoice Number: </th>
-                <td><input id="AmountList5" type="text" class="text ms-long" /></td>
+                <td><textarea id="AmountList2" rows="3" class="text ms-long Required"></textarea></td>
             </tr>
             <tr>
                 <th class="fieldName">Amount: </th>
-                <td><input id="AmountList6" type="number" class="text ms-long Required" /></td>
+                <td><input id="AmountList3" type="text" class="text ms-long Required" /></td>
             </tr>
             </tr>
             <th class="fieldName">Currency:</th>
-            <td><input id="AmountList7" type="text" class="currency" readonly="readonly" /></td>
+            <td><input id="AmountList4" type="text" class="text ms-long Required" /></td>
             </tr>
             </tbody>
         </table>
@@ -108,10 +114,7 @@
         <tbody class="selectable">
         <tr>
             <th title="Title">Request ID</th>
-            <th class="hidden" title="Account">Account</th>
-            <th title="Account_Type">Expense Type</th>
             <th title="Description">Description</th>
-            <th title="Invoice_Number">Invoice Number</th>
             <th title="Amount">Amount</th>
             <th title="Currency">Currency</th>
         </tr>
@@ -155,18 +158,10 @@
         <tbody class="selectable">
         <tr>
             <th title="Title">Request ID</th>
-            <th title="Role">Role</th>
-            <th title="Approver" class="hidden">Account</th>
-            <th title="Approver Name">Approver</th>
+            <th title="Approval_x0020_Level">Role</th>
+            <th title="Approver_x0020_Account" class="hidden">Account</th>
+            <th title="Approver_x0020_Name">Approver</th>
         </tr>
         </tbody>
     </table>
-</div><html xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882"><head>
-    <!--[if gte mso 9]><xml>
-    <mso:CustomDocumentProperties>
-        <mso:_dlc_DocId msdt:dt="string">1-10000510-1638853143-2</mso:_dlc_DocId>
-        <mso:_dlc_DocIdItemGuid msdt:dt="string">d2edf724-d59a-494d-945d-17f19bbff5b8</mso:_dlc_DocIdItemGuid>
-        <mso:_dlc_DocIdUrl msdt:dt="string">https://lightwebdv-app05.osram.com/content/10000510/PCVWR/_layouts/15/DocIdRedir.aspx?ID=1-10000510-1638853143-2, 1-10000510-1638853143-2</mso:_dlc_DocIdUrl>
-    </mso:CustomDocumentProperties>
-</xml><![endif]-->
-</head>
+</div>

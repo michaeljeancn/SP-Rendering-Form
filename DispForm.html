@@ -1,0 +1,117 @@
+<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/jquery-ui-1.12.0/jquery-ui.min.css" rel="stylesheet" />
+<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/ledvance.ui.css" rel="stylesheet" />
+<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/DataTables/datatables.min.css" rel="stylesheet" />
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN//jquery-2.2.4.min.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/jquery-ui-1.12.0/jquery-ui.min.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/ledvance.ui.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/DataTables/datatables.min.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/Osram.UserInfo.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/Osram.UserInfo.CurrentUser.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/moment.min.js"></script>
+<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/numeral.js"></script>
+<!-- <script src="https://cwe01-dv.ledvance.com/cwe/web/public/javascripts/cweclient.js"></script> -->
+<script src="https://ledvance365.sharepoint.com/sites/APR/SiteAssets/FormActions.js"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        SP.SOD.executeFunc('sp.js','SP.ClientContext',init);
+    });
+</script>
+<h1>Payment Request: <span class="spdatacell" data-displayname="Form"></span></h1>
+<table id="MainInfo" cellspacing="5" cellpadding="5">
+    <tbody>
+    <tr>
+        <td class="fieldName"><b>Request ID:</b></td>
+        <td><span class="spdatacell" data-displayname="Request ID"></span></td>
+        <td class="fieldName"><b>Request Date:</b></td>
+        <td><span class="spdatacell" data-displayname="Request Date"></span></td>
+    </tr>
+    <tr>
+        <td class="fieldName"><b>BG:</b></td>
+        <td><span class="spdatacell" data-displayname="BG"></span></td>
+        <td class="fieldName"><b>Company Code:</b></td>
+        <td><span class="spdatacell" data-displayname="Company Code"></span></td>
+    </tr>
+    <tr>
+		<td class="fieldName"><b>Applicant:</b></td>
+		<td><span class="spdatacell" data-displayname="Applicant"></span></td>
+		<td class="fieldName"><b>PO (If necessary):</b></td>
+		<td><span class="spdatacell" data-displayname="PO"></span></td>
+    </tr>
+    <tr>
+        <td class="fieldName"><b>Claim Type:</b></td>
+        <td><span class="spdatacell" data-displayname="Claim Type"></span></td>
+        <td class="fieldName" id="coSelect"><b></b></td>
+        <td>
+        	<span class="spdatacell" data-displayname="Cost Center"></span>
+			<span class="spdatacell" data-displayname="Order Number" style="display: none;"></span>
+        </td>
+    </tr>
+    <tr>
+        <td class="fieldName"><b>Vendor / Customer Code:</b></td>
+        <td><span class="spdatacell" data-displayname="Vendor Code"></span></td>
+        <td class="fieldName"><b>Vendor / Customer Name:</b></td>
+        <td><span class="spdatacell" data-displayname="Vendor Name"></span></td>
+    </tr>
+    <tr>
+    	<td class="fieldName"><b>Invoice No. (If necessary):</b></td>
+    	<td><span class="spdatacell" data-displayname="Invoice Number"></span></td>
+    	<td></td>
+    	<td></td>
+    </tr>
+    <tr class="trHide">
+        <td></td>
+        <td><span class="spdatacell" data-displayname="Status"></span></td>
+        <td></td>
+        <td><span class="spdatacell" data-displayname="Currency"></span></td>
+    </tr>
+    </tbody>
+</table>
+<div id="Attachments" class="ItemsList">
+    <h2>Attachments</h2>
+    <span class="spdatarow" data-displayname="Attachments"></span>
+</div>
+<div id="AmountList" class="ItemsList">
+    <h2>Amount Details</h2>
+    <table cellspacing="5" cellpadding="5">
+        <tbody class="selectable">
+            <tr>
+                <th title="Title">Request ID</th>
+                <th title="Description">Description</th>
+                <th title="Amount">Amount</th>
+                <th title="Currency">Currency</th>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<div id="calcPrice">
+    <table>
+        <tr><th>Total:</th><td></td><td></td><td></td><td><span class="spdatacell" data-displayname="Total Amount"></span></td></tr>
+    </table>
+</div>
+<div id="ApproverList"  class="ItemsList">
+    <h2>Approver List</h2>
+    <table cellspacing="5" cellpadding="5">
+        <tbody class="selectable">
+            <tr>
+                <th title="Title">Request ID</th>
+                <th title="Approval_x0020_Level">Role</th>
+                <th title="Approver_x0020_Account" class="hidden">Account</th>
+                <th title="Approver_x0020_Name">Approver</th>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<div id="HistoryList" class="ItemsList">
+    <h2>Workflow History</h2>
+    <table cellspacing="5" cellpadding="5">
+        <tbody>
+            <tr>
+                <th title="Action_x0020_Time">Time</th>
+                <th title="Role">Role</th>
+                <th title="Action_x0020_Person">Name</th>
+                <th title="Response">Action</th>
+                <th title="Comments">Comments</th>
+            </tr>
+        </tbody>
+    </table>
+</div>

@@ -15,39 +15,64 @@
   </script>
 </head>
 <body onload="prettyPrint(); highlight();">
-  <pre class="prettyprint lang-js"><span id='global-property-'>/**
-</span> * @author Zhang, Wei - Michael
- * Several SharePoint functions cannot initial in strict mode
- * Setup for global vars
+  <pre class="prettyprint lang-js"><span id='global-property-bgList'>/**
+</span> * Setup for global vars: Temporary BG list to retrieve from SharePoint list
+ * @type {Array}
  */
+var bgList = [];
+<span id='global-property-vendorList'>/**
+</span> * Setup for global vars: Temporary vendor list to retrieve from SharePoint list
+ * @type {Array}
+ */
+var vendorList = [];
+<span id='global-property-amountColName'>/**
+</span> * Setup for global vars: Amount Column name list to save to SharePoint list
+ * @type {Array}
+ */
+var amountColName = [];
+<span id='global-property-approverColName'>/**
+</span> * Setup for global vars: Approver Column name list to save to SharePoint list
+ * @type {Array}
+ */
+var approverColName = [];
+<span id='global-property-newAmountItemContents'>/**
+</span> * Setup for global vars: Amount item list to add to SharePoint list
+ * @type {Array}
+ */
+var newAmountItemContents = [];
+<span id='global-property-newApproverItemContents'>/**
+</span> * Setup for global vars: Approver item list to add to SharePoint list
+ * @type {Array}
+ */
+var newApproverItemContents = [];
+<span id='global-property-updateItemContents'>/**
+</span> * Setup for global vars: Amount item list to update to SharePoint list
+ * @type {Array}
+ */
+var updateItemContents = [];
 <span id='global-property-itemListIDs'>/**
-</span> * Prepare for list items deleting
+</span> * Setup for global vars: Prepare for list items deleting
  * @type {Array}
  */
 var itemListIDs = [];
 <span id='global-property-approverListIDs'>/**
-</span> * Save for approver list items
+</span> * Setup for global vars: Save for approver list items
  * @type {Array}
  */
 var approverListIDs = [];
-<span id='global-property-currencyList'>/**
-</span> * Temporary BG list to retrieve from SharePoint list
- * @type {Array}
- */
-var currencyList = [];
-<span id='global-property-accountList'>/**
-</span> * Temporary account list to retrieve from SharePoint list
- * @type {Array}
- */
-var accountList = [];
 <span id='global-property-RIDText'>/**
 </span> * @property RIDText, autoNumber, WaitingDialog -
- * All the key variables in form
+ * Setup for global vars: All the key variables in form
+ * @type {String}
  */
 var RIDText,
     autoNumber,
     WaitingDialog;
-
+<span id='global-property-originalSaveButtonClickHandler'>/**
+</span> * Setup for original function recorder/container of save button
+ * @type {Function}
+ */
+var originalSaveButtonClickHandler = function(){};
 <span id='init'>/**
 </span> * @class init
  * #The major function to initial the rendering form.
@@ -56,13 +81,14 @@ var RIDText,
  *     - Use jQuery selectors and value retrieve and setting
  *     - To enable customized code, SP.SOD.executeFunc('sp.js','SP.ClientContext',init); must include in forms
  *     - Ideally one Init function already enough for all 3 default HTML forms, to reduce the execution effort
+ * @author Zhang, Wei - Michael &lt;michael.zhang@ledvance.com&gt;
+ * Several SharePoint functions cannot initial in strict mode
  * @return {Object} Rendering form designed as the way developer like
  *
  * @requires SP.ClientContext
- * @requires SP.UI.ModalDialog
  * @requires Osram.UserInfo
  * @requires Osram.UserInfo.CurrentUser
- * @requires ledvance.UI
+ * @requires datatables
  * @requires moment
  * @requires numeral
  * @requires getListItemsByKey
@@ -70,27 +96,30 @@ var RIDText,
  * @requires updateListItem
  * @requires deleteListItem
  * @requires createRID
- * @requires updateAutoNumber
  * @requires setUserFieldValue
  * @requires getUserFieldValue
  * @requires attachUserFieldFunction
  * @requires MaxnTotalCalc
  * @requires initializePeoplePicker
+ *
+ * @since FormActions 1.0 beta
  */
 function init() {
 <span id='init-event-renderLayout'>    /**
 </span>     * @event renderLayout
      * ledvance.UI.js already included inside HTML forms, renderLayout to initial the form
+     * @requires ledvance.UI
      */
     ledvance.UI.renderLayout();
 <span id='init-property-WaitingDialog'>    /**
 </span>     * SharePoint predefined the WaitScreen, define the customize variable to include it into form
      * @type {Object} SharePoint defined ModalDialog
+     * @requires SP.UI.ModalDialog
      */
     WaitingDialog = SP.UI.ModalDialog.showWaitScreenWithNoClose(&quot;Wait for a moment please...&quot;, &quot;It shouldn't be very long.&quot;, 200, 500);
 
-<span id='init-event-fullscreenmodeBtn_Click'>    /**
-</span>     * @event fullscreenmodeBtn_Click
+<span id='init-event-fullscreenmodeBtn_click'>    /**
+</span>     * @event fullscreenmodeBtn_click
      * Execute SharePoint *&quot;Full Screen Mode&quot;*
      */
     $('#ctl00_fullscreenmodeBtn').click();
@@ -98,63 +127,61 @@ function init() {
 <span id='init-event-table_width'>    /**
 </span>     * @event table_width
      * Standardize page tables width
-     * @type {Number} pixle of width
+     * @type {Number} pixel of width
      */
+    $('#MainInfo').width(1200);
     var mainWidth = $('#MainInfo').width();
+    var numWidth = Number(mainWidth);
     $('.ItemsList table').width(mainWidth);
+    $('#idAttachmentsTable').width(String(numWidth - 100) + 'px');
+    $('#idAttachmentsTable').css('border', '0');
     $('.dialog table').width(500);
 
-<span id='init-event-Claim_Type_change'>    /**
-</span>     * @event Claim_Type_change
-     * FieldName and field change base on ClaimType select
-     * Attach the function to *&quot;Claim Type&quot;* selector's change method
-     * var typeText Current selector's value
-     * Other related field will change based on the value change
+<span id='init-event-originalSaveButtonClickHandler_replace'>    /**
+</span>     * @event originalSaveButtonClickHandler_replace
+     * Record and replace the original save button function
+     * @type {Function}
+     *
+     * @since FormActions 1.3 beta
      */
-    $(&quot;select[title^='Claim Type']&quot;).change(function(){
-        var typeText = $(&quot;select[title^='Claim Type']&quot;).val();
-        if(typeText === 'Project') {
-            $(&quot;span[data-displayname='Cost Center']&quot;).hide();
-            $(&quot;span[data-displayname='Order Number']&quot;).show();
-            $(&quot;.changeLabel b&quot;).text('Order Number:');
-        } else {
-            $(&quot;span[data-displayname='Cost Center']&quot;).show();
+    var saveButton = $(&quot;[name$='diidIOSaveItem']&quot;); //gets form save button and ribbon save button
+    if (saveButton.length &gt; 0) {
+      originalSaveButtonClickHandler = saveButton[0].onclick;  //save original function
+    }
+    $(saveButton).attr(&quot;onclick&quot;, &quot;validateAndSaveForm()&quot;); //change onclick to execute our custom validation and save function
+
+<span id='init-event-coSelect_change'>    /**
+</span>     * @event coSelect_change
+     * FieldName and field hide and show base on select
+     */
+    $(&quot;#coSelect&quot;).change(function(){
+        if($(this).val === &quot;Cost Center&quot;) {
             $(&quot;span[data-displayname='Order Number']&quot;).hide();
-            $(&quot;.changeLabel b&quot;).text('Cost Center:');
+            $(&quot;span[data-displayname='Cost Center']&quot;).show();
+        } else {
+            $(&quot;span[data-displayname='Order Number']&quot;).show();
+            $(&quot;span[data-displayname='Cost Center']&quot;).hide();
         }
     });
 
 <span id='init-event-BG_change'>    /**
 </span>     * @event BG_change
      * Retrieve key information by BG selector
-     * If *&quot;BG&quot;* selecter's value changed and not blank, insert the retrieved data in variable *&quot;currencyList&quot;* (array).
-     * Meanwhile, get *&quot;PCV Account&quot;* list items base on BG, and save into variable *&quot;accountList&quot;* (array).
+     * If *&quot;BG&quot;* selector's value changed and not blank, insert the retrieved data in variable *&quot;bgList&quot;* (array).
      */
     $(&quot;select[title^='BG']&quot;).change(function(){
+        var bgIndex;
         if($(this).val() !== '') {
             $(&quot;input[title^='BG']&quot;).val($(this).val());
-            for(var i in currencyList) {
-                if(currencyList[i][0] === $(this).val()) {
-                    var bgIndex = i;
+            for(var i in bgList) {
+                if(bgList[i][0] === $(this).val()) {
+                    bgIndex = i;
                 }
             }
-            $(&quot;input[title^='Company Code']&quot;).val(currencyList[bgIndex][1]);
-            $(&quot;input[title^='Currency']&quot;).val(currencyList[bgIndex][3]);
-            $(&quot;input[title^='Prefix']&quot;).val(currencyList[bgIndex][4]);
-            $(&quot;#AmountList7&quot;).val(currencyList[bgIndex][3]);
+            $(&quot;input[title^='Company Code']&quot;).val(bgList[bgIndex][1]);
 
             var requestTitle = $(this).val() + '-' + RIDText;
             $(&quot;input[id^='Title']&quot;).val(requestTitle);
-
-<span id='init-event-getListItemsByKey_Account'>            /**
-</span>             * @event getListItemsByKey_Account
-             * For details please check: {@link getListItemsByKey}.
-             * Retrieve expense type (FA Account) from PCV Account list base on BG selection.
-             * Result is Accounts information of BG, return as Array and assign to global accountList within callback function.
-             */
-            getListItemsByKey('PCV Account', 'BG', $(this).val(), ['Title', 'English_x0020_Description', 'Chinese_x0020_Description', 'Claim_x0020_Type'], function(x){
-                accountList = x;
-            });
         }
     });
 
@@ -171,25 +198,7 @@ function init() {
             $(&quot;a[href^='javascript:RemoveLocal']:last&quot;).attr('href', '#');
         });
     } else {
-        $('#Attachments').show();
-    }
-
-<span id='init-event-initializePeoplePicker_ApproverPicker'>    /**
-</span>     * @event initializePeoplePicker_ApproverPicker
-     * Initial people picker in dialog with function {@link initializePeoplePicker}
-     * 
-     */
-    if($('#ApproverPicker').length &gt; 0) {
-        initializePeoplePicker('ApproverPicker', function(){
-            $('#ApproverPicker_TopSpan').attr('title', 'Approver Picker');
-            $('#ApproverPicker_TopSpan_EditorInput').attr('title', 'Approver Picker Editor');
-<span id='init-event-attachUserFieldFunction_ApproverPicker'>            /**
-</span>             * @event attachUserFieldFunction_ApproverPicker
-             * Attach the automatically get user information function to *&quot;Approver Picker&quot;* people picker, see details {@link attachUserFieldFunction}
-             */
-            attachUserFieldFunction('Approver Picker', ['Approver Account', 'Approver Name'], ['AccountName', 'PreferredName']);
-        });
-        $('#ApproverListDialog').css('paddingBottom', '150px');
+        $('#Attachments').hide();
     }
 
 <span id='init-event-diidIOGoBack_attr'>    /**
@@ -203,6 +212,7 @@ function init() {
 <span id='init-event-btnAdd_click'>    /**
 </span>     * @event btnAdd_click
      * Setup btnAdd to enable list line adding dialog
+     * @preventable
      */
     $('.btnAdd').click(function(){
         var divId = $(this).parent().parent().attr('id');
@@ -214,57 +224,29 @@ function init() {
             $(&quot;a[id^='ApproverPicker']&quot;).click();
             $('#ApproverPicker').attr('style', '');
             $('#ApproverPicker').parent().find('.ms-formvalidation').remove();
-        } else {
+        } else if ($('#AmountList tbody').children().length === 1){
             $('#' + dialogId + ' .text').val('');
+            $('#' + divId + '4').removeAttr('disabled');
+        } else if ($('#AmountList tbody').children().length !== 1){
+            $('#' + divId + '2').val('');
+            $('#' + divId + '3').val('');
+            $('#' + divId + '4').attr('disabled', 'disabled');
         }
 
         //Mark status as add
         $('#'+dialogId+' .Status').val('add');
-
-        //Retrive expense type base on Claim Type
-        if(divId === 'AmountList') {
-            $.each(accountList, function(x, arr) {
-                $.each(arr, function(y, val) {
-                    if($.isArray(val)) {
-                        if($.inArray($(&quot;select[title^='Claim Type']&quot;).val(), val) != -1) {
-                            console.log(arr);
-                            if(arr[2] === null) {
-                                arr[2] = '';
-                            }
-                            $('#AmountList3').append(&quot;&lt;option value='&quot; + arr[1] + &quot;' Account='&quot; + arr[0] + &quot;'&gt;&quot; + arr[0] + &quot; - &quot; + arr[1] + &quot; - &quot; + arr[2] +&quot;&lt;/option&gt;&quot;);
-                        }
-                    }
-                });
-            });
-        }
         return false;
     });
 
 <span id='init-event-btnEdit_click'>    /**
 </span>     * @event btnEdit_click
      * Setup btnEdit to enable list line editing dialog
+     * @preventable
      */
     $('.btnEdit').click(function(){
         var divId = $(this).parent().parent().attr('id');
         var dialogId = divId + 'Dialog';
         $('#'+dialogId).dialog('open');
-
-        //Retrive expense type base on Claim Type
-        if(divId === 'AmountList') {
-            $.each(accountList, function(x, arr) {
-                $.each(arr, function(y, val) {
-                    if($.isArray(val)) {
-                        if($.inArray($(&quot;select[title^='Claim Type']&quot;).val(), val) != -1) {
-                            console.log(arr);
-                            if(arr[2] === null) {
-                                arr[2] = '';
-                            }
-                            $('#AmountList3').append(&quot;&lt;option value='&quot; + arr[1] + &quot;' Account='&quot; + arr[0] + &quot;'&gt;&quot; + arr[0] + &quot; - &quot; + arr[1] + &quot; - &quot; + arr[2] +&quot;&lt;/option&gt;&quot;);
-                        }
-                    }
-                });
-            });
-        }
 
         //Read content into dialog
         var listContent = [];
@@ -288,6 +270,7 @@ function init() {
 <span id='init-event-btnDelete_click'>    /**
 </span>     * @event btnDelete_click
      * Setup btnDelete to delete selected row in items list
+     * @preventable
      */
     $('.btnDelete').click(function(){
         var divId = $(this).parent().parent().attr('id');
@@ -300,17 +283,14 @@ function init() {
         $('tr.ui-selected').remove();
 
         if($('#' + divId + ' table tbody').children().length === 1){
-            //$('#MPrice').text('0.00');
             $('#TPrice').text('0.00');
             $('#' + divId + ' .btnEdit').hide();
             $('#' + divId + ' .btnDelete').hide();
             $(&quot;select[title^='BG']&quot;).removeAttr('disabled');
             $(&quot;select[title^='Claim Type']&quot;).removeAttr('disabled');
         } else {
-            //Calculate for Max and Totel amount when delete item
+            //Calculate for Total amount when delete item
             var result = MaxnTotalCalc(divId, 'Amount');
-            //$('#MPrice').text(result[0]);
-            //$(&quot;input[id^='Max_']&quot;).val(result[0]);
             $('#TPrice').text(result[1]);
             $(&quot;input[id^='Total_']&quot;).val(result[1]);
         }
@@ -341,28 +321,15 @@ function init() {
         }
     });
 
-<span id='init-event-AmountList6_change'>    /**
-</span>     * @event AmountList6_change
-     * Basic calculation for Amount
-     */
-    $('#AmountList6').change(function(){
-        if ($(this).val() !== '') {
-            var amount = parseFloat($(this).val());
-            $(this).val(amount.toFixed(2));
-        }
-    });
-
 <span id='init-event-AmountList3_change'>    /**
 </span>     * @event AmountList3_change
-     * Fill in the PCV Account
+     * Basic calculation for Amount
      */
     $('#AmountList3').change(function(){
-        var selectedValue = $(this).val();
-        $(this).children().each(function(){
-            if($(this).val() === selectedValue) {
-                $('#AmountList2').val($(this).attr('Account'));
-            }
-        });
+        if ($(this).val() !== '') {
+            var amount = numeral($(this).val());
+            $(this).val(amount.format('0,0.00'));
+        }
     });
 
 <span id='init-event-Required_blur'>    /**
@@ -391,8 +358,8 @@ function init() {
         }
     });
 
-<span id='init-method-dialog'>    /**
-</span>     * @method dialog
+<span id='init-method-dialog_dialog'>    /**
+</span>     * @method dialog_dialog
      * Dialog to Add or Edit list item
      * @param  {Boolean} autoOpen Dialog open automatically or not
      * @param  {Number} width Dialog width
@@ -412,7 +379,7 @@ function init() {
                 var dialogId = $(this).attr('id');
                 var divId = dialogId.slice(0,dialogId.indexOf('Dialog'));
                 var dialogLength = $('#' + dialogId + ' tbody').children().length;
-
+                var textareaVal, textareaSave;
 
                 //Confirm status to decide to Add or Edit
                 if($('#' + dialogId +' .Status').val() === 'add') {
@@ -421,8 +388,8 @@ function init() {
                     for (var i = 0; i &lt; dialogLength; i++) {
                         var ii = i + 1;
                         if($('#' + divId + ii).is('textarea')) {
-                            var textareaVal = $('#' + divId + ii).val();
-                            var textareaSave = textareaVal.replace(/\n|\r\n/g, '&lt;br /&gt;');
+                            textareaVal = $('#' + divId + ii).val();
+                            textareaSave = textareaVal.replace(/\n|\r\n/g, '&lt;br /&gt;');
                             console.log(textareaSave);
                             $('#'+divId+' tr.ui-widget-content:last').append('&lt;td&gt;' + textareaSave + '&lt;/td&gt;');
                         } else if($('#' + divId + ' .selectable th:eq(' + i + ')').attr('class').indexOf('hidden') != -1) {
@@ -442,13 +409,13 @@ function init() {
                     for (var i = 0; i &lt; dialogLength; i++) {
                         var ii = i + 1;
                         if($('#' + divId + ii).is('textarea')) {
-                            var textareaVal = $('#' + divId + ii).val();
-                            var textareaSave = textareaVal.replace(/\n|\r\n/g, '&lt;br /&gt;');
-                            $('#'+divId+' tr.ui-widget-content:last').append('&lt;td&gt;' + textareaSave + '&lt;/td&gt;');
+                            textareaVal = $('#' + divId + ii).val();
+                            textareaSave = textareaVal.replace(/\n|\r\n/g, '&lt;br /&gt;');
+                            $('#'+divId+' tr.ui-selected').append('&lt;td&gt;' + textareaSave + '&lt;/td&gt;');
                         } else if($('#' + divId + ' .selectable th:eq(' + i + ')').attr('class').indexOf('hidden') != -1) {
-                            $('#'+divId+' tr.ui-widget-content:last').append('&lt;td class=&quot;hidden&quot;&gt;'+$('#'+divId+ii).val()+'&lt;/td&gt;');
+                            $('#'+divId+' tr.ui-selected').append('&lt;td class=&quot;hidden&quot;&gt;'+$('#'+divId+ii).val()+'&lt;/td&gt;');
                         } else {
-                            $('#'+divId+' tr.ui-widget-content:last').append('&lt;td&gt;'+$('#'+divId+ii).val()+'&lt;/td&gt;');
+                            $('#'+divId+' tr.ui-selected').append('&lt;td&gt;'+$('#'+divId+ii).val()+'&lt;/td&gt;');
                         }
                     }
                     if($(&quot;input[id^='Status_']&quot;).val() !='Draft') {
@@ -459,11 +426,14 @@ function init() {
                 //Keep the border for table only, not td(s) inside
                 $('tr.ui-widget-content').css('border','0');
 
-                //Calculate for Totel amount when save item
+                //Calculate for Total amount when save item
                 if(divId === 'AmountList') {
                     var result = MaxnTotalCalc(divId, 'Amount');
                     $('#TPrice').text(result[1]);
+                    $(&quot;input[title^='Total Amount']&quot;).val(result[1]);
+                    $(&quot;input[title^='Currency']&quot;).val($('#AmountList4').val());
                 }
+
                 $(this).dialog('close');
 
             }}, {
@@ -481,9 +451,6 @@ function init() {
 
             var dialogId = $(this).attr('id');
             var divId = dialogId.slice(0,dialogId.indexOf('Dialog'));
-            if(divId === 'AmountList'){
-                $(&quot;#AmountList3&quot;).html(&quot;&lt;option selected='selected' value=''&gt;&lt;/option&gt;&quot;);
-            }
             $('#' + divId + ' .btnEdit').hide();
             $('#' + divId + ' .btnDelete').hide();
         }
@@ -495,7 +462,7 @@ function init() {
      *     - Confirm if &quot;Request ID&quot; or &quot;RID&quot; value exists
      *     - If not, confirm current opening is NewForm
      *     - If yes, check &quot;RID&quot; span has any child
-     *     - If yes and span do has child, confirm current opening is EditForm
+     *     - If yes and span does have child, confirm current opening is EditForm
      *     - Otherwise, confirm current opening is DispForm (ReadOnly)
      */
     if($(&quot;span[data-displayname='Request ID']&quot;).children().length !== 0 &amp;&amp; $(&quot;input[title^='Request ID']&quot;).val() === '') {
@@ -503,7 +470,6 @@ function init() {
         $(&quot;input[title^='Request ID']&quot;).attr('readonly', 'readonly');
         $(&quot;input[id^='Status_']&quot;).val('Draft');
 
-        $(&quot;input[id^='Title']&quot;).css('display', 'none');
         $(&quot;input[title^='Request Date']&quot;).attr('readonly', 'readonly');
         $(&quot;input[title^='Request Date']&quot;).val(moment().format('YYYY-MM-DD'));
         $(&quot;table[title^='Request Date'] tbody tr td:eq(1)&quot;).css('display', 'none');
@@ -512,267 +478,602 @@ function init() {
         $(&quot;input[id$='DateTimeFieldDate']&quot;).attr('class', 'ms-long');
         $(&quot;select[id$='DropDownChoice']&quot;).attr('class', 'ms-long');
         $(&quot;select[id$='LookupField']&quot;).attr('class', 'ms-long');
-<span id='init-event-getListItemsByKey_autoNumber'>        /**
-</span>         * @event getListItemsByKey_autoNumber
-         * Create autoNumber RID, first get autoNumber from SP list item, see details: {@link getListItemsByKey}
-         * @return {Array}    AutoNumber list item content, assign first one as autoNumber.
-         */
-        getListItemsByKey('Finance Approvers', 'ID', 1, ['Auto_x0020_Number'], function(x) {
-            autoNumber = x[0][0];
-            console.log(autoNumber);
-<span id='init-event-createRID_PCV'>            /**
-</span>             * @event createRID_PCV
-             * Second create RID base on autoNumber, see details: {@link createRID}
-             * @return {String}    Generated RID text, assign it as RIDText.
-             */
-            createRID('PCV-', 'autoNumber', function(x) {
-                RIDText = x;
-                console.log(RIDText);
-                $(&quot;input[title^='Request ID']&quot;).val(RIDText);
-                //Structure of items list
-                $('.RID').val(RIDText);
 
-<span id='init-event-updateAutoNumber_PCV'>                /**
-</span>                 * @event updateAutoNumber_PCV
-                 * Last update SP list item with autoNumber + 1, see details: {@link updateAutoNumber}
-                 */
-                updateAutoNumber('Finance Approvers', 1, autoNumber, function(){
-<span id='init-event-getListItemsByKey_BG'>                    /**
-</span>                     * @event getListItemsByKey_BG
-                     * Prepare for BG selection, see details: {@link getListItemsByKey}
-                     * @return {Array}      BG list item content, assign whole Array as currencyList.
-                     */
-                    getListItemsByKey('Currency List', 'ID', '', ['Title', 'Company_x0020_Code', 'Full_x0020_Name', 'Currency', 'Vendor_x0020_Prefix'], function(x){
-                        currencyList = x;
-                        for (var i in currencyList) {
-                            $(&quot;select[title^='BG']&quot;).append(&quot;&lt;option value='&quot; + currencyList[i][0] + &quot;'&gt;&quot; + currencyList[i][0] + ' - ' + currencyList[i][2] + &quot;&lt;/option&gt;&quot;);
+        if(GetUrlKeyValue('RID') === '') {
+            getListItemsByKey('Key Info List', 'ID', 1, ['AutoNumber'])
+            .then(
+                function(data) {
+                    autoNumber = data[0][0];
+                    createRID('Payment-', 'autoNumber')
+                    .then(
+                        function(data) {
+                            RIDText = data;
+                            $(&quot;input[title^='Request ID']&quot;).val(RIDText);
+                            //Structure of items list
+                            $('.RID').val(RIDText);
+                            updateListItem('Key Info List', [{'ID': 1, 'AutoNumber': autoNumber + 1}])
+                            .then(
+                                getListItemsByKey('Key Info List', 'ID', '', ['Title', 'Company_x0020_Code','Full_x0020_Name'])
+                                .then(
+                                    function(data) {
+                                        bgList = data;
+                                        for (var i in bgList) {
+                                            $('#BG_Replace_Field_DropDownChoice').append('&lt;option value=&quot;' + bgList[i][0] + '&quot;&gt;' + bgList[i][0] + ' - ' + bgList[i][2] + '&lt;/option&gt;');
+                                        }
+<span id='init-event-initializePeoplePicker_ApproverPicker'>                                        /**
+</span>                                         * @event initializePeoplePicker_ApproverPicker
+                                         * Initial people picker in dialog with function {@link initializePeoplePicker}
+                                         *
+                                         * @since FormActions 1.2 beta
+                                         */
+                                        if($('#ApproverPicker').length &gt; 0) {
+                                            initializePeoplePicker('ApproverPicker')
+                                            .then(
+                                                function(){
+                                                    $('#ApproverPicker_TopSpan').attr('title', 'Approver Picker');
+                                                    $('#ApproverPicker_TopSpan_EditorInput').attr('title', 'Approver Picker Editor');
+<span id='init-event-attachUserFieldFunction_ApproverPicker'>                                                    /**
+</span>                                                     * @event attachUserFieldFunction_ApproverPicker
+                                                     * Attach the automatically get user information function to *&quot;Approver Picker&quot;* people picker, see details {@link attachUserFieldFunction}
+                                                     */
+                                                    attachUserFieldFunction('Approver Picker', ['Approver Account', 'Approver Name'], ['AccountName', 'PreferredName']);
+                                                }
+                                            );
+                                            $('#ApproverListDialog').css('paddingBottom', '150px');
+                                        }
+<span id='init-event-WaitingDialog_close'>                                        /**
+</span>                                         * @event WaitingDialog_close
+                                         * Close the WaitingDialog after all events executed successfully.
+                                         */
+                                        WaitingDialog.close();
+                                        getListItemsByKey('Vendor Master Data', 'ID', '', ['Title', 'Vendor_x0020_Name'])
+                                        .then(
+                                            function(data) {
+                                                vendorList = data;
+                                                $(&quot;input[title^='Vendor Code']&quot;).change(function() {
+                                                    var result = '';
+                                                    for (var i in vendorList) {
+                                                        if ($(this).val() === vendorList[i][0]) {
+                                                            result = vendorList[i][1];
+                                                        }
+                                                    }
+                                                    if (result !== '') {
+                                                        $(&quot;input[title^='Vendor Name']&quot;).val(result);
+                                                    } else {
+                                                        $(&quot;input[title^='Vendor Name']&quot;).val('');
+                                                    }
+                                                });
+                                            }
+                                        );
+                                    }
+                                )
+                            );
                         }
-<span id='init-event-attachUserFieldFunction_PayTo'>                        /**
-</span>                         * @event attachUserFieldFunction_PayTo
-                         * Attach the automatically get specific user information function to 'Pay To' people picker, see detials: {@link attachUserFieldFunction}
-                         */
-                        attachUserFieldFunction('Pay To', ['Cost Center', 'Employee Number'], ['costCenter', 'employeeNumber']);
-<span id='init-event-WaitingDialog_close'>                        /**
-</span>                         * @event WaitingDialog_close
-                         * Close the WaitingDialog after all events executed successfully.
-                         */
-                        WaitingDialog.close();
+                    );
+                },
+                function(err) {
+                    console.log('Error: ' + err);
+                }
+            );
+<span id='init-event-ItemList_show'>            /**
+</span>             * @event ItemList_show
+             * Show every ItemsList except Attachments
+             */
+            $('.ItemsList:not(#Attachments)').show();
+        } else {
+            RIDText = GetUrlKeyValue('RID');
+            getListItemsByKey('Payment Applications', 'Request_x0020_ID', RIDText, ['Request_x0020_Date', 'BG', 'Company_x0020_Code', 'Applicant', 'Claim_x0020_Type', 'PO', 'Cost_x0020_Center', 'Order_x0020_Number', 'Vendor_x0020_Code', 'Vendor_x0020_Name', 'Invoice_x0020_Number', 'Total_x0020_Amount', 'Currency'])
+            .then(
+                function(data) {
+                    var currentItem = [];
+                    $.each(data[data.length - 1], function(index, value) {
+                        var actValue;
+                        if (value === null) {
+                            actValue = '';
+                        } else {
+                            actValue = value;
+                        }
+                        currentItem.push(actValue);
                     });
-                });
-            });
-        });
+                    $(&quot;input[id^='Status_']&quot;).val('Rework');
+                    $(&quot;input[title^='Request ID']&quot;).val(RIDText);
+                    $(&quot;input[title^='Request Date']&quot;).val(currentItem[0]);
+                    $(&quot;input[title^='BG']&quot;).val(currentItem[1]);
+                    $(&quot;input[title^='Company Code']&quot;).val(currentItem[2]);
+                    $(&quot;select[title^='Claim Type']&quot;).val(currentItem[4]);
+                    $(&quot;input[title^='PO']&quot;).val(currentItem[5]);
+                    $(&quot;input[title^='Cost Center']&quot;).val(currentItem[6]);
+                    $(&quot;input[title^='Order Number']&quot;).val(currentItem[7]);
+                    $(&quot;input[title^='Vendor Code']&quot;).val(currentItem[8]);
+                    $(&quot;input[title^='Vendor Name']&quot;).val(currentItem[9]);
+                    $(&quot;input[title^='Invoice Number']&quot;).val(currentItem[10]);
+                    $(&quot;input[title^='Total Amount']&quot;).val(currentItem[11]);
+                    $(&quot;input[title^='Currency']&quot;).val(currentItem[12]);
+                    var loadApplicant = currentItem[3].get_email();
+                    setUserFieldValue('Applicant', loadApplicant);
+                    getListItemsByKey('Key Info List', 'ID', '', ['Title', 'Company_x0020_Code','Full_x0020_Name'])
+                    .then(
+                        function(data) {
+                            bgList = data;
+                            for (var i in bgList) {
+                                $('#BG_Replace_Field_DropDownChoice').append('&lt;option value=&quot;' + bgList[i][0] + '&quot;&gt;' + bgList[i][0] + ' - ' + bgList[i][2] + '&lt;/option&gt;');
+                            }
+                            $('#BG_Replace_Field_DropDownChoice').val($(&quot;input[title^='BG']&quot;).val());
+                            getListItemsByKey('Amount List', 'Title', RIDText, ['Description', 'Amount', 'Currency'])
+                            .then(
+                                function(data) {
+                                    for (var i in data) {
+                                        $('#AmountList .selectable').append('&lt;tr&gt;&lt;td&gt;' + RIDText + '&lt;/td&gt;&lt;td&gt;' + data[i][0] + '&lt;/td&gt;&lt;td&gt;' + data[i][1] + '&lt;/td&gt;&lt;td&gt;' + data[i][2] + '&lt;/td&gt;&lt;/tr&gt;');
+                                    }
+                                    getListItemsByKey('Approver List', 'Title', RIDText, ['Approval_x0020_Level', 'Approver_x0020_Account', 'Approver_x0020_Name'])
+                                    .then(
+                                        function(data) {
+                                            for (var i in data) {
+                                                $('#ApproverList .selectable').append('&lt;tr&gt;&lt;td&gt;' + RIDText + '&lt;/td&gt;&lt;td&gt;' + data[i][0] + '&lt;/td&gt;&lt;td class=&quot;hidden&quot;&gt;' + data[i][1] + '&lt;/td&gt;&lt;td&gt;' + data[i][2] + '&lt;/td&gt;&lt;/tr&gt;');
+                                            }
+                                            if ($('#idAttachmentsTable').find('tbody').length &gt; 0) {
+                                                $('#Attachments').show();
+                                            }
+<span id='init-event-initializePeoplePicker_ApproverPicker'>                                            /**
+</span>                                             * @event initializePeoplePicker_ApproverPicker
+                                             * Initial people picker in dialog with function {@link initializePeoplePicker}
+                                             *
+                                             * @since FormActions 1.2 beta
+                                             */
+                                            if($('#ApproverPicker').length &gt; 0) {
+                                                initializePeoplePicker('ApproverPicker')
+                                                .then(
+                                                    function(){
+                                                        $('#ApproverPicker_TopSpan').attr('title', 'Approver Picker');
+                                                        $('#ApproverPicker_TopSpan_EditorInput').attr('title', 'Approver Picker Editor');
+<span id='init-event-attachUserFieldFunction_ApproverPicker'>                                                        /**
+</span>                                                         * @event attachUserFieldFunction_ApproverPicker
+                                                         * Attach the automatically get user information function to *&quot;Approver Picker&quot;* people picker, see details {@link attachUserFieldFunction}
+                                                         */
+                                                        attachUserFieldFunction('Approver Picker', ['Approver Account', 'Approver Name'], ['AccountName', 'PreferredName']);
+                                                    }
+                                                );
+                                                $('#ApproverListDialog').css('paddingBottom', '150px');
+                                            }
+<span id='init-event-WaitingDialog_close'>                                            /**
+</span>                                             * @event WaitingDialog_close
+                                             * Close the WaitingDialog after all events executed successfully.
+                                             */
+                                            WaitingDialog.close();
+                                            getListItemsByKey('Vendor Master Data', 'ID', '', ['Title', 'Vendor_x0020_Name'])
+                                            .then(
+                                                function(data) {
+                                                    vendorList = data;
+                                                    $(&quot;input[title^='Vendor Code']&quot;).change(function() {
+                                                        var result = '';
+                                                        for (var i in vendorList) {
+                                                            if ($(this).val() === vendorList[i][0]) {
+                                                                result = vendorList[i][1];
+                                                            }
+                                                        }
+                                                        if (result !== '') {
+                                                            $(&quot;input[title^='Vendor Name']&quot;).val(result);
+                                                        } else {
+                                                            $(&quot;input[title^='Vendor Name']&quot;).val('');
+                                                        }
+                                                    });
+                                                }
+                                            );
+                                        }
+                                    );
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+<span id='init-event-ItemList_show'>                /**
+</span>                 * @event ItemList_show
+                 * Show every ItemsList except Attachments
+                 */
+                $('.ItemsList:not(#Attachments)').show();
+        }
 
+
+    } else if($(&quot;span[data-displayname='Request ID']&quot;).children().length != 0 &amp;&amp; $(&quot;input[title^='Request ID']&quot;).val() != '') {
+
+        //Setup readonly fields
+        $(&quot;input[id^='Title']&quot;).css('width','550');
+        $(&quot;input[id^='Title']&quot;).attr('readonly', 'readonly');
+        $(&quot;input[title^='Request ID']&quot;).attr('readonly', 'readonly');
+        $(&quot;input[id^='Status_']&quot;).attr('readonly', 'readonly');
+        $(&quot;input[title^='Request Date']&quot;).attr('readonly', 'readonly');
+        $(&quot;table[title^='Request Date'] tbody tr td:eq(1)&quot;).css('display', 'none');
+
+        //Resize the input controls
+        $(&quot;input[id$='DateTimeFieldDate']&quot;).attr('class', 'ms-long');
+        $(&quot;select[id$='DropDownChoice']&quot;).attr('class', 'ms-long');
+        $(&quot;select[id$='LookupField']&quot;).attr('class', 'ms-long');
+
+        //Retrieve list content base on RID
+        RIDText = $(&quot;input[title^='Request ID']&quot;).val();
+
+        getListItemsByKey('Key Info List', 'ID', '', ['Title', 'Company_x0020_Code','Full_x0020_Name'])
+        .then(
+            function(data) {
+                bgList = data;
+                for (var i in bgList) {
+                    $('#BG_Replace_Field_DropDownChoice').append('&lt;option value=&quot;' + bgList[i][0] + '&quot;&gt;' + bgList[i][0] + ' - ' + bgList[i][2] + '&lt;/option&gt;');
+                }
+                $('#BG_Replace_Field_DropDownChoice').val($(&quot;input[title^='BG']&quot;).val());
+                getListItemsByKey('Amount List', 'Title', RIDText, ['Description', 'Amount', 'Currency'])
+                .then(
+                    function(data) {
+                        for (var i in data) {
+                            $('#AmountList .selectable').append('&lt;tr&gt;&lt;td&gt;' + RIDText + '&lt;/td&gt;&lt;td&gt;' + data[i][0] + '&lt;/td&gt;&lt;td&gt;' + data[i][1] + '&lt;/td&gt;&lt;td&gt;' + data[i][2] + '&lt;/td&gt;&lt;/tr&gt;');
+                        }
+                        getListItemsByKey('Approver List', 'Title', RIDText, ['Approval_x0020_Level', 'Approver_x0020_Account', 'Approver_x0020_Name'])
+                        .then(
+                            function(data) {
+                                for (var i in data) {
+                                    $('#ApproverList .selectable').append('&lt;tr&gt;&lt;td&gt;' + RIDText + '&lt;/td&gt;&lt;td&gt;' + data[i][0] + '&lt;/td&gt;&lt;td class=&quot;hidden&quot;&gt;' + data[i][1] + '&lt;/td&gt;&lt;td&gt;' + data[i][2] + '&lt;/td&gt;&lt;/tr&gt;');
+                                }
+                                if ($('#idAttachmentsTable').find('tbody').length &gt; 0) {
+                                    $('#Attachments').show();
+                                }
+<span id='init-event-initializePeoplePicker_ApproverPicker'>                                /**
+</span>                                 * @event initializePeoplePicker_ApproverPicker
+                                 * Initial people picker in dialog with function {@link initializePeoplePicker}
+                                 *
+                                 * @since FormActions 1.2 beta
+                                 */
+                                if($('#ApproverPicker').length &gt; 0) {
+                                    initializePeoplePicker('ApproverPicker')
+                                    .then(
+                                        function(){
+                                            $('#ApproverPicker_TopSpan').attr('title', 'Approver Picker');
+                                            $('#ApproverPicker_TopSpan_EditorInput').attr('title', 'Approver Picker Editor');
+<span id='init-event-attachUserFieldFunction_ApproverPicker'>                                            /**
+</span>                                             * @event attachUserFieldFunction_ApproverPicker
+                                             * Attach the automatically get user information function to *&quot;Approver Picker&quot;* people picker, see details {@link attachUserFieldFunction}
+                                             */
+                                            attachUserFieldFunction('Approver Picker', ['Approver Account', 'Approver Name'], ['AccountName', 'PreferredName']);
+                                        }
+                                    );
+                                    $('#ApproverListDialog').css('paddingBottom', '150px');
+                                }
+<span id='init-event-WaitingDialog_close'>                                /**
+</span>                                 * @event WaitingDialog_close
+                                 * Close the WaitingDialog after all events executed successfully.
+                                 */
+                                WaitingDialog.close();
+                                getListItemsByKey('Vendor Master Data', 'ID', '', ['Title', 'Vendor_x0020_Name'])
+                                .then(
+                                    function(data) {
+                                        vendorList = data;
+                                        $(&quot;input[title^='Vendor Code']&quot;).change(function() {
+                                            var result = '';
+                                            for (var i in vendorList) {
+                                                if ($(this).val() === vendorList[i][0]) {
+                                                    result = vendorList[i][1];
+                                                }
+                                            }
+                                            if (result !== '') {
+                                                $(&quot;input[title^='Vendor Name']&quot;).val(result);
+                                            } else {
+                                                $(&quot;input[title^='Vendor Name']&quot;).val('');
+                                            }
+                                        });
+                                    }
+                                );
+                            }
+                        );
+                    }
+                );
+            }
+        );
 <span id='init-event-ItemList_show'>        /**
 </span>         * @event ItemList_show
          * Show every ItemsList except Attachments
          */
         $('.ItemsList:not(#Attachments)').show();
+    } else {
 
+        //Hide and show div by Scrap Type, meanwhile retrieve list content with JSOM function
+        var RIDString = $(&quot;span[data-displayname='Request ID']&quot;).text();
+        var trimText = /\S+/;
+        RIDText = trimText.exec(RIDString)[0];
+        var myId = GetUrlKeyValue('ID');
 
-    } //else if($(&quot;span[data-displayname='Request ID']&quot;).children().length != 0 &amp;&amp; $(&quot;input[title^='Request ID']&quot;).val() != '') {
+        if ($(&quot;span[data-displayname='Cost Center']&quot;).text().trim() !== '') {
+            $('#coSelect').html('&lt;b&gt;Cost Center:&lt;/b&gt;');
+        } else {
+            $('#coSelect').html('&lt;b&gt;Order Number:&lt;/b&gt;');
+        }
 
-  //Setup readonly fields
- //  $(&quot;input[id^='Form']&quot;).css('width','550');
- //  $(&quot;input[id^='Form']&quot;).attr('readonly', 'readonly');
- //  $(&quot;input[title^='Request ID']&quot;).attr('readonly', 'readonly');
- //  $(&quot;input[id^='Status_']&quot;).attr('readonly', 'readonly');
- //  $(&quot;input[title^='Request Date']&quot;).attr('readonly', 'readonly');
- //  $(&quot;table[title^='Request Date'] tbody tr td:eq(1)&quot;).css('display', 'none');
+        if ($(&quot;span[data-displayname='Status']&quot;).text().trim() === 'Rejected') {
+            var jumpURL = 'https://ledvance365.sharepoint.com/sites/APR/Lists/Payment%20Applications/NewForm.aspx?RID=' + RIDText;
+            $(&quot;input[id$='diidIOGoBack']&quot;).parent().append(&quot;&lt;input type='button' value='Correct' id='Correct' onclick=\&quot;STSNavigate(\'&quot; + jumpURL + &quot;\');\&quot;&gt;&quot;);
+        }
 
- //  //Resize the input controls
- //  $(&quot;input[id$='DateTimeFieldDate']&quot;).attr('class', 'ms-long');
- //  $(&quot;select[id$='DropDownChoice']&quot;).attr('class', 'ms-long');
- //  $(&quot;select[id$='LookupField']&quot;).attr('class', 'ms-long');
-
- //  //Retrieve list content base on RID
- //  RIDText = $(&quot;input[title^='Request ID']&quot;).val();
- //  getListItemsByKey('Scrapping Items', 'Title', RIDText);
-
- // } else {
-
- //  //Hide and show div by Scrap Type, meanwhile retrieve list content with JSOM function
- //  var RIDString = $(&quot;span[data-displayname='Request ID']&quot;).text();
- //  var trimText = /\S+/;
- //  RIDText = trimText.exec(RIDString)[0];
- //  var myId = GetUrlKeyValue('ID');
-
- //  $('#Applist1').text($(&quot;span[data-displayname='CC Responsible'] .ms-peopleux-userdisplink&quot;).text());
- //  getListItemsByKey('Workflow History', 'Item', myId);
-
- // }
-
+        getListItemsByKey('Amount List', 'Title', RIDText, ['Description', 'Amount', 'Currency'])
+        .then(
+            function(data) {
+                for (var i in data) {
+                    $('#AmountList .selectable').append('&lt;tr&gt;&lt;td&gt;' + RIDText + '&lt;/td&gt;&lt;td&gt;' + data[i][0] + '&lt;/td&gt;&lt;td&gt;' + data[i][1] + '&lt;/td&gt;&lt;td&gt;' + data[i][2] + '&lt;/td&gt;&lt;/tr&gt;');
+                }
+                getListItemsByKey('Approver List', 'Title', RIDText, ['Approval_x0020_Level', 'Approver_x0020_Account', 'Approver_x0020_Name'])
+                .then(
+                    function(data) {
+                        for (var i in data) {
+                            $('#ApproverList .selectable').append('&lt;tr&gt;&lt;td&gt;' + RIDText + '&lt;/td&gt;&lt;td&gt;' + data[i][0] + '&lt;/td&gt;&lt;td class=&quot;hidden&quot;&gt;' + data[i][1] + '&lt;/td&gt;&lt;td&gt;' + data[i][2] + '&lt;/td&gt;&lt;/tr&gt;');
+                        }
+                        getListItemsByKey('Workflow History', 'Title', RIDText, ['Action_x0020_Time', 'Role', 'Action_x0020_Person', 'Response', 'Comments'])
+                        .then(
+                            function(data) {
+                                for (var i in data) {
+                                    var actTime = moment(data[i][0]).format('YYYY-MM-DD HH:mm:ss');
+                                    var actName = '';
+                                    if (data[i][2] !== null) {
+                                        actName = data[i][2].get_lookupValue();
+                                    }
+                                    var actComment = '';
+                                    if (data[i][4] !== null) {
+                                        actComment = data[i][4];
+                                    }
+                                    $('#HistoryList table').append('&lt;tr&gt;&lt;td&gt;' + actTime + '&lt;/td&gt;&lt;td&gt;' + data[i][1] + '&lt;/td&gt;&lt;td&gt;' + actName + '&lt;/td&gt;&lt;td&gt;' + data[i][3] + '&lt;/td&gt;&lt;td&gt;' + actComment + '&lt;/td&gt;&lt;/tr&gt;');
+                                }
+                                if ($('#idAttachmentsTable').find('tbody').length &gt; 0) {
+                                    $('#Attachments').show();
+                                }
+<span id='init-event-WaitingDialog_close'>                                /**
+</span>                                 * @event WaitingDialog_close
+                                 * Close the WaitingDialog after all events executed successfully.
+                                 */
+                                WaitingDialog.close();
+                            }
+                        );
+                    }
+                );
+            }
+        );
+<span id='init-event-ItemList_show'>        /**
+</span>         * @event ItemList_show
+         * Show every ItemsList except Attachments
+         */
+        $('.ItemsList:not(#Attachments)').show();
+    }
 }
 
 <span id='init-method-PreSaveAction'>/**
 </span> * @method PreSaveAction
  * ###In this function you can handle field validation and additional changes before the form will be saved. Return true, if form can be saved, false if doesn’t
  * ###Several suggestions:
- *     - Organize all the saving/deleting functions in here
  *     - Validation rules should more focus on additional contents
  *     - SharePoint original list item will validate itself by column type
+ *     - Do not use async function inside since it doesn't support, if have to use async functions, use validateAndSaveForm function instead.
  * @preventable
+ * @deprecated 1.3 beta Use {@link #validateAndSaveForm} instead
+ *
+ * @since FormActions 1.0 beta
  */
-function PreSaveAction(){
-    var divId;
+//function PreSaveAction() {}
+<span id='init-method-validateAndSaveForm'>/**
+</span> * @method validateAndSaveForm
+ * ###This is the key function to replace original PreSaveAction function, confirm if current form passes validation
+ *     - Since we have to manually call originalSaveButtonClickHandler at last, validation should be done here
+ *     - Return false will prevent form saving, if true then form will save
+ * @preventable
+ *
+ * @since FormActions 1.3 beta
+ */
+function validateAndSaveForm() {
     var formStatus;
-    if($(&quot;select[id^='Scrap_']&quot;).val() === 'Inventory') {
-        divId = 'InvList';
-    } else {
-        divId = 'AssetList';
-    }
-    if($('#ApproverList').css('display') === 'none') {
-        formStatus = 'No scrapping item.';
-    } else if($(&quot;input[id^='BU']&quot;).val() === '[]' || $(&quot;input[id^='SAP']&quot;).val() === '[]') {
-        formStatus = 'Approver list not complete.';
-    } else if($('.trHide:first').css('display') != 'none' &amp;&amp; $(&quot;input[id^='AC_CON']&quot;).val() === '[]') {
-        formStatus = 'No AC &amp; CON approver.';
-    } else if($('.trHide:last').css('display') != 'none' &amp;&amp; $(&quot;input[id^='AC']&quot;).val() === '[]') {
-        formStatus = 'No AC approver.';
+    if($('#AmountList .selectable tr').length === 1) {
+        formStatus = 'No request Item.';
+    } else if($('#ApproverList .selectable tr').length === 1) {
+        formStatus = 'No approver inserted.';
     } else {
         formStatus = 'pass';
     }
     console.log('Current form status: ' + formStatus);
 
-    //Get list column name and push into an array
-    var itemList = $('#' + divId + ' table tbody');
-    var listCol = $('#' + divId + ' table tbody tr:first');
-    var colName = [];
-    listCol.find('th').each(function(){
-        colName.push($(this).attr('title'));
-    });
-
-    //Get new list item content and push into another array
-    var newItemContents = [];
-    var newGetItem = '';
-    var newGetItems = [];
-    for (i=1;i&lt;itemList.children().length;i++){
-        newGetItem = $('#' + divId + ' table tbody tr:eq('+i+').new');
-        newGetItem.find('td').each(function(){
-            newGetItems.push($(this).text());
-        });
-        newItemContents.push(newGetItems);
-    }
-    console.log(newItemContents);
-
-    //Get updated list item content and push into third array
-    var updateItemContents = [];
-    var updateGetItem = '';
-    var updateGetItems = [];
-    for (i=1;i&lt;itemList.children().length;i++){
-        updateGetItem = $('#' + divId + ' table tbody tr:eq('+i+').updated');
-        updateGetItem.find('td').each(function(){
-            updateGetItems.push($(this).text());
-        });
-        updateItemContents.push(updateGetItems);
-    }
-    console.log(updateItemContents);
-
     if(formStatus === 'pass') {
         //Confirm to save the request
-        var saveConfirm = confirm('Please confirm to submit the request:');
+        var saveConfirm = confirm('Please confirm to submit the request.');
         if(saveConfirm === true) {
-
-            //Create list items
-            console.log(newItemContents[0].length);
-            if(newItemContents[0].length &gt; 0) {
-                for (var i in newItemContents) {
-                    createListItem(&quot;Scrapping Items&quot;, colName, newItemContents[i]);
-                }
-            }
-
-            //Update list items
-            console.log(updateItemContents[0].length);
-            if(updateItemContents[0].length &gt; 0) {
-                for (var i in updateItemContents) {
-                    updateListItem(&quot;Scrapping Items&quot;, colName, updateItemContents[i]);
-                }
-            }
-
-            //Delete list items
-            console.log(listIDs.length);
-            if(listIDs.length &gt; 0) {
-                deleteListItem(&quot;Scrapping Items&quot;, listIDs);
-            }
-
-            //Setup Status
+<span id='init-event-CWEClient_assignGuid'>            /**
+</span>             * @event CWEClient_assignGuid
+             * Create a customized variable base on class CWEClient, and assign GUID
+             */
+            /*var cweClient = new CWEClient({
+                guidFieldName: 'Request_x0020_ID',
+                workflowDefinitionCode: 'apacPaymentRequest',
+                initStateCode: 'Prepare',
+                preSaveActionBefore: false
+            });*/
+            //Save actions
             if($(&quot;input[id^='Status_']&quot;).val() === 'Draft') {
                 $(&quot;input[id^='Status_']&quot;).val('Submitted');
+                $('#ctl00_exitfullscreenmodeBtn').click();
+                formSaveFunction();
             } else if($(&quot;input[id^='Status_']&quot;).val() === 'Rework') {
                 $(&quot;input[id^='Status_']&quot;).val('Resubmitted');
+                $('#ctl00_exitfullscreenmodeBtn').click();
+                formSaveFunction();
             }
-
-            //Clean up approvers list
-            if($('.trHide:first').css('display') === 'none') {
-                $(&quot;a[id^='AC_']&quot;).click();
-                $(&quot;input[id^='AppStatus3']&quot;).val('');
-            }
-            if($('.trHide:last').css('display') === 'none') {
-                $(&quot;a[id^='AC_']:last&quot;).click();
-                $(&quot;input[id^='AppStatus4']&quot;).val('');
-            }
-
-            //Exit focus form mode
-            $('#ctl00_exitfullscreenmodeBtn').click();
-
-            return true;
         } else {
             return false;
         }
     } else {
-        alert('The form cannot save because: ' + formStatus);
+        alert('The form cannot save because: \n' + formStatus);
+        return false;
     }
 }
 
-<span id='updateAutoNumber'>/**
-</span> * @class updateAutoNumber
- * #Update the autoNumber + 1 back to SharePoint list item.
+<span id='init-method-formSaveFunction'>/**
+</span> * @method formSaveFunction
+ * ###This is the key function to replace original PreSaveAction function, allow async function running inside
+ * ###Several suggestions:
+ *     - Organize all the saving/deleting functions in here
+ *     - Remember to record save button original function in init function
  *
- * *The autoNumber list must has the column name **&quot;Auto Number&quot;**, otherwise the function will not work.*
- *
- * @param {String} listTitle &gt;Target SharePoint list title
- * @param {Number} itemId &gt;Item ID to update
- * @param {Number} num &gt;The autoNumber needs to update
- * @param {Function} callback &gt;The callback function to handle other works in form
- *
- * @uses updateListItem
- *
- * #See the example:
- *     updateAutoNumber('list', 1, 66, function(){
- *         otherWorks();
- *     });
+ * @since FormActions 1.4 beta
  */
-function updateAutoNumber(listTitle, itemId, num, callback) {
+function formSaveFunction() {
+    //Define vars will use
+    var actionCase = [];
+    var functionCase = [];
+    //Get amount list and approver list column names, then push into arrays
+    $('#AmountList .selectable th').each(function(){
+        amountColName.push($(this).attr('title'));
+    });
+    $('#ApproverList .selectable th').each(function(){
+        approverColName.push($(this).attr('title'));
+    });
 
-    num = num + 1;
-    var colName = ['ID', 'Auto_x0020_Number'];
-    var itemContent = [itemId, num];
-    this.callback = callback;
+    //Get new amount list item content, then push into newAmountItemContents
+    for (var i = 0; i &lt; $('#AmountList .selectable tr').length; i++){
+        var amountGetItem = $('#AmountList .selectable tr:eq(' + i + ').new');
+        var amountGetItems = [];
+        var newAmountGetItems = {};
+        amountGetItem.find('td').each(function(){
+            amountGetItems.push($(this).text());
+        });
+        if (amountGetItems.length &gt; 0) {
+            for (var x = 0; x &lt; amountColName.length; x++) {
+                newAmountGetItems[amountColName[x]] = amountGetItems[x];
+            }
+            newAmountItemContents.push(newAmountGetItems);
+        }
+    }
+    //Get new approver list item content, then push into newApproverItemContents
+    for (var i = 0; i &lt; $('#ApproverList .selectable tr').length; i++){
+        var approverGetItem = $('#ApproverList .selectable tr:eq(' + i + ').new');
+        var approverGetItems = [];
+        var newApproverGetItems = {};
+        approverGetItem.find('td').each(function(){
+            approverGetItems.push($(this).text());
+        });
+        if (approverGetItems.length &gt; 0) {
+            for (var x = 0; x &lt; approverColName.length; x++) {
+                newApproverGetItems[approverColName[x]] = approverGetItems[x];
+            }
+            newApproverItemContents.push(newApproverGetItems);
+        }
+    }
 
-    //Update list item by specified information
-    updateListItem(listTitle, colName, itemContent, callback);
+    //Get updated amount list item content, then push into updateItemContents
+    for (var i = 0; i &lt; $('#AmountList .selectable tr').length; i++){
+        var updateGetItem = $('#AmountList .selectable tr:eq(' + i + ').updated');
+        var updateTemp = [];
+        var updateGetItems = {};
+        updateGetItem.find('td').each(function(){
+            updateTemp.push($(this).text());
+        });
+        if (updateTemp.length &gt; 0) {
+            for (var x = 0; x &lt; amountColName.length; x++) {
+                updateGetItems[amountColName[x]] = updateTemp[x];
+            }
+            updateItemContents.push(updateGetItems);
+        }
+    }
+    //Confirm each array status and push the result into array actionCase
+    if (newAmountItemContents.length &gt; 0) {
+        actionCase.push({
+            'valid': '1',
+            'function': 'createListItem(&quot;Amount List&quot;, newAmountItemContents)'
+        });
+    } else {
+        actionCase.push({'valid': '0'});
+    }
+    if (newApproverItemContents.length &gt; 0) {
+        actionCase.push({
+            'valid': '1',
+            'function': 'createListItem(&quot;Approver List&quot;, newApproverItemContents)'
+        });
+    } else {
+        actionCase.push({'valid': '0'});
+    }
+    if (updateItemContents.length &gt; 0) {
+        actionCase.push({
+            'valid': '1',
+            'function': 'updateListItem(&quot;Amount List&quot;, updateItemContents);'
+        });
+    } else {
+        actionCase.push({'valid': '0'});
+    }
+    if (itemListIDs.length &gt; 0) {
+        actionCase.push({
+            'valid': '1',
+            'function': 'deleteListItem(&quot;Amount List&quot;, itemListIDs);'
+        });
+    } else {
+        actionCase.push({'valid': '0'});
+    }
+    if (approverListIDs.length &gt; 0) {
+        actionCase.push({
+            'valid': '1',
+            'function': 'deleteListItem(&quot;Approver List&quot;, approverListIDs);'
+        });
+    } else {
+        actionCase.push({'valid': '0'});
+    }
+    for (var i in actionCase) {
+        if (actionCase[i].valid === '1') {
+            var tempFunction = new Function(actionCase[i].function);
+            functionCase.push(tempFunction);
+        }
+    }
+    if (functionCase.length &gt; 0) {
+        $.when(
+            $.each(functionCase, function(index, value) {
+                value.call();
+            })
+        ).then(
+            function(result) {
+                console.log(result);
+                originalSaveButtonClickHandler();
+            },
+            function(err) {
+                console.log('Error: ');
+                console.log(err);
+            }
+        );
+    } else {
+        originalSaveButtonClickHandler();
+    }
 }
-
 <span id='createRID'>/**
 </span> * @class createRID
- * #Create Request ID (RID) with 2 different types
+ * #Create Request ID (RID) with 2 different types, modified to jQuery Deferred function since FormActions 1.3 beta
  *
  * @param  {String}   appPrefix &gt;Prefix to identify current application
  * @param  {String}   type      &gt;Predefined 2 types: time and autoNumber
- * @param  {Function} callback  &gt;Callback function after RID generation
  * @return {String}             &gt;New Request ID (RID)
  *
+ * @since FormActions 1.0 beta
+ *
  * #See the example 1 for type &quot;time&quot;:
- *     createRID('prefix', 'time', function(){
- *         doSomething;
- *     });
+ *     createRID('prefix', 'time')
+ *     .then(
+ *         function(data) {
+ *             Success...
+ *         },
+ *         function(error) {
+ *             Error...
+ *         }
+ *     );
  *
  * #See the example 2 for type &quot;autoNumber&quot;:
- *     createRID('prefix', 'autoNumber', function(){
- *         updateAutoNumber(...);
- *     });
+ *     createRID('prefix', 'autoNumber')
+ *     .then(
+ *         function(data) {
+ *             Success...
+ *         },
+ *         function(error) {
+ *             Error...
+ *         }
+ *     );
  */
-function createRID(appPrefix, type, callback) {
+function createRID(appPrefix, type) {
 
+    var dfd = $.Deferred();
     var now = moment();
     var RID = '';
     //Setup for type &quot;time&quot;
@@ -783,18 +1084,17 @@ function createRID(appPrefix, type, callback) {
         RID = appPrefix + now.format('YYWW') + autoNumber;
     }
 
-    if(callback &amp;&amp; typeof(callback) === &quot;function&quot;) {
-        callback(RID);
-    } else {
-        return RID;
-    }
+    dfd.resolve(RID);
+    return dfd.promise();
 }
 
 <span id='setUserFieldValue'>/**
 </span> * @class setUserFieldValue
- * #Input user field by specifc user account
+ * #Input user field by specific user account
  * @param {String} fieldName &gt;The user field title
  * @param {String} userName  &gt;The user account needs to insert
+ *
+ * @since FormActions 1.0 beta
  *
  * #See the example:
  *     setUserFieldValue('PeoplePicker', 'domain\\username');
@@ -810,18 +1110,26 @@ function setUserFieldValue(fieldName, userName) {
 
 <span id='getUserFieldValue'>/**
 </span> * @class getUserFieldValue
- * #Retrieve user field value matches returnProperty
+ * #Retrieve user field value matches returnProperty, modified to jQuery Deferred function since FormActions 1.3 beta
  * @param  {String}   fieldName      &gt;The user field title
  * @param  {String}   returnProperty &gt;The property needs to retrieve
- * @param  {Function} callback       &gt;The callback function
  * @return {String}                  &gt;The content of returnProperty
  *
+ * @since FormActions 1.0 beta
+ *
  * #See the example:
- *     getUserFieldValue('PeoplePicker', 'Description', function(){
- *         doSomething;
- *     });
+ *     getUserFieldValue('PeoplePicker', 'Description')
+ *     .then(
+ *         function(data) {
+ *             Success...
+ *         },
+ *         function(error) {
+ *             Error...
+ *         }
+ *     );
  */
-function getUserFieldValue(fieldName, returnProperty, callback) {
+function getUserFieldValue(fieldName, returnProperty) {
+    var dfd = $.Deferred();
     var _PeoplePickerTopId = $(&quot;div[title^='&quot; + fieldName + &quot;']&quot;).attr('id');
     var _PeoplePickerEditor = $(&quot;input[title^='&quot; + fieldName + &quot;']&quot;);
     var _PeoplePickerObject = SPClientPeoplePicker.SPClientPeoplePickerDict[_PeoplePickerTopId];
@@ -834,9 +1142,8 @@ function getUserFieldValue(fieldName, returnProperty, callback) {
             }
         }
     }
-    if(callback &amp;&amp; typeof(callback) === &quot;function&quot;) {
-        callback();
-    }
+    dfd.resolve();
+    return dfd.promise();
 }
 
 <span id='attachUserFieldFunction'>/**
@@ -844,7 +1151,9 @@ function getUserFieldValue(fieldName, returnProperty, callback) {
  * #Attach function to specific user field
  * @param  {String} fieldName   &gt;The user field title
  * @param  {String[]} inputFields &gt;The fields array to input properties
- * @param  {String[]} keyValues   &gt;The values arrya to input into specific fields
+ * @param  {String[]} keyValues   &gt;The values array to input into specific fields
+ *
+ * @since FormActions 1.2 beta
  *
  * #See the example:
  *     attachUserFieldFunction('PeoplePicker', ['field1', 'field2'], ['value1', 'value2']);
@@ -869,20 +1178,22 @@ function attachUserFieldFunction(fieldName, inputFields, keyValues) {
      */
     _PeoplePickerObject.OnUserResolvedClientScript = function(){
 
-        var attachAccount;
+        var attachAccount, originDiv;
+        var attachUser = new Osram.UserInfo();
         if(this.TopLevelElementId.slice(-7) === 'TopSpan') {
-            var originDiv = $('#' + this.TopLevelElementId.replace('_TopSpan', ''));
+            originDiv = $('#' + this.TopLevelElementId.replace('_TopSpan', ''));
         }
         var users = this.GetAllUserInfo();
         if(users.length !== 0) {
             for(var i = 0; i &lt; users.length; i++) {
                 var user = users[i];
                 for(var userProperty in user) {
-                    if(userProperty === 'Description') {
+                    if(userProperty === 'Key') {
                         attachAccount = user[userProperty];
-                        var attachUser = new Osram.UserInfo();
+                        
                         //Setup attachUser to get properties
-                        attachUser.set_account(attachAccount);
+                        var encodeAccount = encodeURIComponent(attachAccount);
+                        attachUser.set_account(encodeAccount);
                         attachUser.set_async(false);
                         attachUser.getUserProfilePropertiesFor();
                         console.log(attachUser);
@@ -912,103 +1223,125 @@ function attachUserFieldFunction(fieldName, inputFields, keyValues) {
 
 <span id='createListItem'>/**
 </span> * @class createListItem
- * #Create item for specific SP list with given data
+ * #Create item for specific SP list with given data, modified to jQuery Deferred function since FormActions 1.3 beta
  * @param  {String}   listTitle   &gt;The SharePoint list name
  * @param  {String[]}   colName     &gt;The columns to insert data in
  * @param  {String/Number/Boolean[]}   itemContent &gt;The content to insert to item columns
- * @param  {Function} callback    &gt;The callback function
+ *
+ * @since FormActions 1.0 beta
  *
  * #See the example:
- *     createListItem('list', ['Title', 'Column'], ['item1', 'content'], function(){
- *         doSomething;
- *     });
+ *     createListItem('list', [{'Title': 'Title1', 'Content': 'Content1'}, {'Title': 'Title2', 'Content': 'Content2'}])
+ *     .then(
+ *         function(data){
+ *             Success...
+ *         },
+ *         function(error){
+ *             Error...
+ *         }
+ *     );
  */
-function createListItem(listTitle, colName, itemContent, callback) {
+function createListItem(listTitle, itemContent) {
 
-    this.callback = callback;
+    var dfd = $.Deferred();
     //Locate list by listTitle
     var clientContext = new SP.ClientContext();
     var list = clientContext.get_web().get_lists().getByTitle(listTitle);
 
     //Create list item
-    var newItem = list.addItem();
-    for (var i in colName) {
-        newItem.set_item(colName[i],itemContent[i]);
+    for (var x in itemContent) {
+        var newItem = list.addItem();
+        var temp = itemContent[x];
+        for (var i in temp) {
+           newItem.set_item(i, temp[i]);
+        }
+        newItem.update();
     }
-    newItem.update();
-
-    clientContext.load(newItem);
     clientContext.executeQueryAsync(
         function() {
-            console.log('Item created. callback: ' + callback);
-            if(callback &amp;&amp; typeof(callback) === &quot;function&quot;) {
-                callback();
-            }
+            dfd.resolve();
         },
         function (sender,args) {
-            alert('Item creation failed: ' + args.get_message() + '\n' + args.get_stackTrace());
+            //alert('Item creation failed: ' + args.get_message() + '\n' + args.get_stackTrace());
+            dfd.reject(args);
         }
     );
+    return dfd.promise();
 }
 
 <span id='updateListItem'>/**
 </span> * @class updateListItem
- * #Update specific item in specific SP list with given data
+ * #Update specific item in specific SP list with given data, modified to jQuery Deferred function since FormActions 1.3 beta
  * @param  {String}   listTitle   &gt;The SharePoint list name
  * @param  {String[]}   colName     &gt;The columns to insert data in
  * @param  {String/Number/Boolean[]}   &gt;itemContent The content to insert to item columns
- * @param  {Function} callback    &gt;The callback function
+ *
+ * @since FormActions 1.0 beta
  *
  * #See the example:
- *     updateListItem('list', ['Title', 'Column'], ['item1', 'content'], function(){
- *         doSomething;
- *     });
+ *     updateListItem('list', [{'Id': 1, 'Title': 'Title1', 'Content': 'Content1'}, {'Id': 2, 'Title': 'Title2', 'Content': 'Content2'}])
+ *     .then(
+ *         function(data){
+ *             Success...
+ *         },
+ *         function(error){
+ *             Error...
+ *         }
+ *     );
  */
-function updateListItem(listTitle, colName, itemContent, callback) {
+function updateListItem(listTitle, itemContent) {
 
-    console.log(colName);
-    console.log(itemContent);
-    this.callback = callback;
+    var dfd = $.Deferred();
     //Locate list by listTitle
     var clientContext = new SP.ClientContext();
     var list = clientContext.get_web().get_lists().getByTitle(listTitle);
 
     //Update list item
-    var updateItem = list.getItemById(itemContent[0]);
-    for (i=1;i&lt;colName.length;i++) {
-        console.log(colName[i] + ', ' + itemContent[i]);
-        updateItem.set_item(colName[i],itemContent[i]);
+    for (var x in itemContent) {
+        var temp = itemContent[x];
+        var updateItem = list.getItemById(temp.ID);
+        for (var i in temp) {
+            if (i !== 'ID') {
+                updateItem.set_item(i, temp[i]);
+            }
+        }
+        updateItem.update();
     }
-    updateItem.update();
 
     clientContext.executeQueryAsync(
         function() {
-            console.log('Item updated. callback: ' + callback);
-            if(callback &amp;&amp; typeof(callback) === &quot;function&quot;) {
-                callback();
-            }
+            dfd.resolve();
         },
         function (sender,args) {
-            alert('Item updateing failed: ' + args.get_message() + '\n' + args.get_stackTrace());
+            //alert('Item updating failed: ' + args.get_message() + '\n' + args.get_stackTrace());
+            dfd.reject(args);
         }
     );
+    return dfd.promise();
 }
 
 <span id='deleteListItem'>/**
 </span> * @class deleteListItem
- * #Delete specific items in specific SP list
+ * #Delete specific items in specific SP list, modified to jQuery Deferred function since FormActions 1.3 beta
  * @param  {String}   listTitle &gt;The SharePoint list name
  * @param  {Number[]}   listIDs   &gt;The item IDs to be delete
- * @param  {Function} callback  &gt;The callback function
+ *
+ * @since FormActions 1.0 beta
  *
  * #See the example:
- *     deleteListItem('list', [1, 2, 3], function(){
- *         doSomething;
- *     });
+ *     deleteListItem('list', [1, 2, 3])
+ *     .then(
+ *         function(data){
+ *             Success...
+ *         },
+ *         function(error){
+ *             Error...
+ *         }
+ *     );
  */
-function deleteListItem(listTitle, listIDs, callback) {
+function deleteListItem(listTitle, listIDs) {
 
-    this.callback = callback;
+    var dfd = $.Deferred();
     //Locate list by listTitle
     var clientContext = new SP.ClientContext();
     var list = clientContext.get_web().get_lists().getByTitle(listTitle);
@@ -1021,95 +1354,88 @@ function deleteListItem(listTitle, listIDs, callback) {
 
     clientContext.executeQueryAsync(
         function() {
-            console.log('Item deleted. callback: ' + callback);
-            if(callback &amp;&amp; typeof(callback) === &quot;function&quot;) {
-                callback();
-            }
+            dfd.resolve();
         },
         function (sender,args) {
-            alert('Item deletion failed: ' + args.get_message() + '\n' + args.get_stackTrace());
+            //alert('Item deletion failed: ' + args.get_message() + '\n' + args.get_stackTrace());
+            dfd.reject(args);
         }
     );
+    return dfd.promise();
 }
 
 <span id='getListItemsByKey'>/**
 </span> * @class getListItemsByKey
- * #This is the very important function to retrieve data from a specific list with key value
+ * #This is the very important function to retrieve data from a specific list with key value, modified to jQuery Deferred function since FormActions 1.3 beta
  * @param  {String}   listTitle   &gt;The SharePoint list needs to query
  * @param  {String}   keyColName  &gt;The information query column
  * @param  {String/Number/Boolean}   keyField    &gt;The information needs to query with
  * @param  {String[]}   queryFields &gt;The information needs to query out
- * @param  {Function} callback    &gt;The callback function once query succeeded
- * @return {Object} collListItem is the return data, requires onQuerySuccedded function handel first
+ * @return {Object} collListItem is the return data, requires onQuerySucceeded function handel first
+ * 
+ * @since FormActions 1.0 beta
  *
  * #See the example:
- *     getListItemsByKey('list', 'ID', 1, ['Title', 'Column'], function(){
- *         doSomething;
- *     });
+ *     getListItemsByKey('list', 'ID', 1, ['Title', 'Column'])
+ *     .then(
+ *         function(data){
+ *             Success...
+ *         },
+ *         function(error){
+ *             Error...
+ *         }
+ *     );
  */
-function getListItemsByKey(listTitle, keyColName, keyField, queryFields, callback) {
+function getListItemsByKey(listTitle, keyColName, keyField, queryFields) {
 
     this.listTitle = listTitle;
     this.keyColName = keyColName;
     this.keyField = keyField || '';
     this.queryFields = queryFields || ['Title'];
-    this.callback = callback;
+    this.dfd = $.Deferred();
 
     //Locate list by listTitle
     var clientContext = new SP.ClientContext();
     var list = clientContext.get_web().get_lists().getByTitle(listTitle);
 
     var camlQuery = new SP.CamlQuery();
-    if(keyField !== '') {
+    if (keyField !== '') {
         camlQuery.set_viewXml(
-            '&lt;View&gt;&lt;Query&gt;&lt;Where&gt;&lt;Eq&gt;&lt;FieldRef Name=\'' + keyColName + '\'/&gt;&lt;Value Type=\'Text\'&gt;' + keyField + '&lt;/Value&gt;&lt;/Eq&gt;&lt;/Where&gt;&lt;/Query&gt;&lt;/View&gt;'
+            '&lt;View Scope=&quot;Recursive&quot;&gt;&lt;Query&gt;&lt;Where&gt;&lt;Eq&gt;&lt;FieldRef Name=\'' + keyColName + '\'/&gt;&lt;Value Type=\'Text\'&gt;' + keyField + '&lt;/Value&gt;&lt;/Eq&gt;&lt;/Where&gt;&lt;/Query&gt;&lt;/View&gt;'
         );
     } else {
         camlQuery.set_viewXml(
-            '&lt;View&gt;&lt;Query&gt;&lt;Where&gt;&lt;IsNotNull&gt;&lt;FieldRef Name=\'' + keyColName + '\'/&gt;&lt;/IsNotNull&gt;&lt;/Where&gt;&lt;/Query&gt;&lt;/View&gt;'
+            '&lt;View Scope=&quot;Recursive&quot;&gt;&lt;Query&gt;&lt;Where&gt;&lt;IsNotNull&gt;&lt;FieldRef Name=\'' + keyColName + '\'/&gt;&lt;/IsNotNull&gt;&lt;/Where&gt;&lt;/Query&gt;&lt;/View&gt;'
         );
     }
     this.collListItem = list.getItems(camlQuery);
 
     clientContext.load(collListItem);
-    clientContext.executeQueryAsync(onQuerySucceeded, onQueryFailed);
-}
+    clientContext.executeQueryAsync(//onQuerySucceeded, onQueryFailed);
+        function() {
+            var listItemInfos = [];
+            var listItemEnumerator = collListItem.getEnumerator();
 
-<span id='getListItemsByKey-method-onQuerySucceded'>/**
-</span> * @method onQuerySucceded
- * Execute if getListItemsByKey succeeded, callback function inheritance from {@link getListItemsByKey}
- * @return {String[]}        &gt;Return all list items contents
- */
-function onQuerySucceeded(sender, args) {
-    var listItemInfos = [];
-    var listItemEnumerator = collListItem.getEnumerator();
-
-    //console.log(queryFields);
-    //Enumerate the query result list items
-    while (listItemEnumerator.moveNext()) {
-        var listItem = listItemEnumerator.get_current();
-        var listItemInfo = [];
-        for (var i in queryFields) {
-            listItemInfo.push(listItem.get_item(queryFields[i]));
+            //console.log(queryFields);
+<span id='listItemEnumerator'>            /**
+</span>             * @enum {Object} listItemEnumerator Enumerate the query result list items
+             */
+            while (listItemEnumerator.moveNext()) {
+                var listItem = listItemEnumerator.get_current();
+                var listItemInfo = [];
+                for (var i in queryFields) {
+                    listItemInfo.push(listItem.get_item(queryFields[i]));
+                }
+                listItemInfos.push(listItemInfo);
+            }
+            //console.log(listItemInfos);
+            dfd.resolve(listItemInfos);
+        },
+        function(sender, args) {
+            dfd.reject(args);
         }
-        listItemInfos.push(listItemInfo);
-    }
-    //console.log(listItemInfos);
-
-    if(callback &amp;&amp; typeof(callback) === 'function') {
-        callback(listItemInfos);
-    } else {
-        return listItemInfos;
-    }
-}
-
-<span id='getListItemsByKey-method-onQueryFailed'>/**
-</span> * @method onQueryFailed
- * Execute if {@link getListItemsByKey} failed
- * @param  {Object} args   &gt;The error message object
- */
-function onQueryFailed(sender, args){
-    alert('Request failed.' + args.get_message() + '\n' + args.get_stackTrace());
+    );
+    return dfd.promise();
 }
 
 <span id='MaxnTotalCalc'>/**
@@ -1118,6 +1444,8 @@ function onQueryFailed(sender, args){
  * @param {String} itemList  &gt;The list contains calculate numbers
  * @param {String} calcField &gt;The column contains calculate numbers
  * @return {Number[]} Return 2 number values in array, first one is Max number, second one is Total number.
+ *
+ * @since FormActions 1.0 beta
  *
  * #See the example:
  *     MaxnTotalCalc('formList', 'numbers');
@@ -1129,7 +1457,7 @@ function MaxnTotalCalc(itemList, calcField) {
     var calcRows = $('#' + itemList + ' tr:last').index();
     var numberList = [];
     for (i=1;i&lt;=calcRows;i++) {
-        numberList.push(parseFloat($('#' + itemList + ' tr:eq(' + i + ') td:eq(' + calcIndex + ')').text()));
+        numberList.push(numeral($('#' + itemList + ' tr:eq(' + i + ') td:eq(' + calcIndex + ')').text()).value());
     }
 
     //Calculate the Max and Sum result and return
@@ -1140,37 +1468,44 @@ function MaxnTotalCalc(itemList, calcField) {
     var sumResult = numberList.reduce(function(x, y) {
         return x + y;
     });
-    return [maxResult.toFixed(2), sumResult.toFixed(2)];
+    return [numeral(maxResult).format('0,0.00'), numeral(sumResult).format('0,0.00')];
 }
 
 <span id='initializePeoplePicker'>/**
 </span> * @class initializePeoplePicker
  * The Microsoft JSOM function to initial a self designed people picker
  * @param  {String}   peoplePickerId &gt;The HTML id of text input
- * @param  {Function} callback       &gt;The callback function
+ *
+ * @since FormActions 1.2 beta
  *
  * #See the example:
- *     initializePeoplePicker('myInput', function(){
- *         doSomething;
- *     });
+ *     initializePeoplePicker('myInput')
+ *     .then(
+ *         function(data){
+ *             Success...
+ *         },
+ *         function(error){
+ *             Error...
+ *         }
+ *     );
  */
-function initializePeoplePicker(peoplePickerId, callback) {
-
+function initializePeoplePicker(peoplePickerId) {
+    var dfd = $.Deferred();
     //Create a schema to store picker properties, and set the properties.
     var schema = {};
-    schema['PrincipalAccountType'] = 'User,DL,SecGroup,SPGroup';
-    schema['SearchPrincipalSource'] = 15;
-    schema['ResolvePrincipalSource'] = 15;
-    schema['AllowMultipleValues'] = false;
-    schema['MaximumEntitySuggestions'] = 30;
-    schema['Width'] = '370px';
+    schema.PrincipalAccountType = 'User,DL,SecGroup,SPGroup';
+    schema.SearchPrincipalSource = 15;
+    schema.ResolvePrincipalSource = 15;
+    schema.AllowMultipleValues = false;
+    schema.MaximumEntitySuggestions = 30;
+    schema.Width = '370px';
 
     //Render and initialize the picker. Pass the ID of the DOM element that contains the picker, an array of initial PickerEntity objects to set the picker value, and a schema that defines picker properties.
     this.SPClientPeoplePicker_InitStandaloneControlWrapper(peoplePickerId, null, schema);
 
-    if(callback &amp;&amp; typeof(callback) === 'function') {
-        callback();
-    }
-}</pre>
+    dfd.resolve();
+    return dfd.promise();
+}
+</pre>
 </body>
 </html>
