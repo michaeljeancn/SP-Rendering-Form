@@ -1138,6 +1138,8 @@ function getUserFieldValue(fieldName, returnProperty) {
  *
  * @since FormActions 1.2 beta
  *
+ * @since FormActions 1.2 beta
+ *
  * #See the example:
  *     attachUserFieldFunction('PeoplePicker', ['field1', 'field2'], ['value1', 'value2']);
  */
@@ -1213,6 +1215,8 @@ function attachUserFieldFunction(fieldName, inputFields, keyValues) {
  *
  * @since FormActions 1.0 beta
  *
+ * @since FormActions 1.0 beta
+ *
  * #See the example:
  *     createListItem('list', [{'Title': 'Title1', 'Content': 'Content1'}, {'Title': 'Title2', 'Content': 'Content2'}])
  *     .then(
@@ -1258,6 +1262,8 @@ function createListItem(listTitle, itemContent) {
  * @param  {String}   listTitle   >The SharePoint list name
  * @param  {String[]}   colName     >The columns to insert data in
  * @param  {String/Number/Boolean[]}   >itemContent The content to insert to item columns
+ *
+ * @since FormActions 1.0 beta
  *
  * @since FormActions 1.0 beta
  *
@@ -1311,6 +1317,8 @@ function updateListItem(listTitle, itemContent) {
  *
  * @since FormActions 1.0 beta
  *
+ * @since FormActions 1.0 beta
+ *
  * #See the example:
  *     deleteListItem('list', [1, 2, 3])
  *     .then(
@@ -1356,6 +1364,8 @@ function deleteListItem(listTitle, listIDs) {
  * @param  {String[]}   queryFields >The information needs to query out
  * @return {Object} collListItem is the return data, requires onQuerySucceeded function handel first
  * 
+ * @since FormActions 1.0 beta
+ *
  * @since FormActions 1.0 beta
  *
  * #See the example:
@@ -1458,6 +1468,8 @@ function MaxnTotalCalc(itemList, calcField) {
  * @class initializePeoplePicker
  * The Microsoft JSOM function to initial a self designed people picker
  * @param  {String}   peoplePickerId >The HTML id of text input
+ *
+ * @since FormActions 1.2 beta
  *
  * @since FormActions 1.2 beta
  *
