@@ -1,33 +1,15 @@
 /**
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
  * Setup for global vars: Temporary BG list to retrieve from SharePoint list
  * @type {Array}
  */
 var bgList = [];
 /**
  * Setup for global vars: Temporary vendor list to retrieve from SharePoint list
-<<<<<<< HEAD
-=======
-=======
- * Setup for global vars: Prepare for list items deleting
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
  * @type {Array}
  */
 var vendorList = [];
 /**
-<<<<<<< HEAD
  * Setup for global vars: Amount Column name list to save to SharePoint list
-=======
-<<<<<<< HEAD
- * Setup for global vars: Amount Column name list to save to SharePoint list
-=======
- * Setup for global vars: Save for approver list items
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
  * @type {Array}
  */
 var amountColName = [];
@@ -47,28 +29,12 @@ var newAmountItemContents = [];
  */
 var newApproverItemContents = [];
 /**
-<<<<<<< HEAD
  * Setup for global vars: Amount item list to update to SharePoint list
-=======
-<<<<<<< HEAD
- * Setup for global vars: Amount item list to update to SharePoint list
-=======
- * Setup for global vars: Temporary BG list to retrieve from SharePoint list
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
  * @type {Array}
  */
 var updateItemContents = [];
 /**
-<<<<<<< HEAD
  * Setup for global vars: Prepare for list items deleting
-=======
-<<<<<<< HEAD
- * Setup for global vars: Prepare for list items deleting
-=======
- * Setup for global vars: Temporary account list to retrieve from SharePoint list
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
  * @type {Array}
  */
 var itemListIDs = [];
@@ -98,15 +64,7 @@ var originalSaveButtonClickHandler = function(){};
  *     - Use jQuery selectors and value retrieve and setting
  *     - To enable customized code, SP.SOD.executeFunc('sp.js','SP.ClientContext',init); must include in forms
  *     - Ideally one Init function already enough for all 3 default HTML forms, to reduce the execution effort
-<<<<<<< HEAD
  * @author Zhang, Wei - Michael <michael.zhang@ledvance.com>
-=======
-<<<<<<< HEAD
- * @author Zhang, Wei - Michael <michael.zhang@ledvance.com>
-=======
- * @author Zhang, Wei - Michael
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
  * Several SharePoint functions cannot initial in strict mode
  * @return {Object} Rendering form designed as the way developer like
  *
@@ -223,34 +181,7 @@ function init() {
             $("a[href^='javascript:RemoveLocal']:last").attr('href', '#');
         });
     } else {
-<<<<<<< HEAD
         $('#Attachments').hide();
-=======
-<<<<<<< HEAD
-        $('#Attachments').hide();
-=======
-        $('#Attachments').show();
-    }
-
-    /**
-     * @event initializePeoplePicker_ApproverPicker
-     * Initial people picker in dialog with function {@link initializePeoplePicker}
-     *
-     * @since FormActions 1.2 beta
-     */
-    if($('#ApproverPicker').length > 0) {
-        initializePeoplePicker('ApproverPicker', function(){
-            $('#ApproverPicker_TopSpan').attr('title', 'Approver Picker');
-            $('#ApproverPicker_TopSpan_EditorInput').attr('title', 'Approver Picker Editor');
-            /**
-             * @event attachUserFieldFunction_ApproverPicker
-             * Attach the automatically get user information function to *"Approver Picker"* people picker, see details {@link attachUserFieldFunction}
-             */
-            attachUserFieldFunction('Approver Picker', ['Approver Account', 'Approver Name'], ['AccountName', 'PreferredName']);
-        });
-        $('#ApproverListDialog').css('paddingBottom', '150px');
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
     }
 
     /**
@@ -287,29 +218,6 @@ function init() {
 
         //Mark status as add
         $('#'+dialogId+' .Status').val('add');
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
-
-        //Retrive expense type base on Claim Type
-        if(divId === 'AmountList') {
-            $.each(accountList, function(x, arr) {
-                $.each(arr, function(y, val) {
-                    if($.isArray(val)) {
-                        if($.inArray($("select[title^='Claim Type']").val(), val) != -1) {
-                            console.log(arr);
-                            if(arr[2] === null) {
-                                arr[2] = '';
-                            }
-                            $('#TypeList tbody').append("<tr><td>" + arr[0] + "</td><td>" + arr[1] + "</td><td>" + arr[2] +"</td></tr>");
-                        }
-                    }
-                });
-            });
-        }
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
         return false;
     });
 
@@ -323,29 +231,6 @@ function init() {
         var dialogId = divId + 'Dialog';
         $('#'+dialogId).dialog('open');
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
-        //Retrive expense type base on Claim Type
-        if(divId === 'AmountList') {
-            $.each(accountList, function(x, arr) {
-                $.each(arr, function(y, val) {
-                    if($.isArray(val)) {
-                        if($.inArray($("select[title^='Claim Type']").val(), val) != -1) {
-                            console.log(arr);
-                            if(arr[2] === null) {
-                                arr[2] = '';
-                            }
-                            $('#TypeList tbody').append("<tr><td>" + arr[0] + "</td><td>" + arr[1] + "</td><td>" + arr[2] +"</td></tr>");
-                        }
-                    }
-                });
-            });
-        }
-
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
         //Read content into dialog
         var listContent = [];
         $('tr.ui-selected').find('td').each(function(){
@@ -431,72 +316,6 @@ function init() {
     });
 
     /**
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-=======
-     * @event AmountList3_click
-     * Open the account type list dialog
-     */
-    $('#AmountList3').click(function() {
-        $('#TypeList').dialog('open');
-    });
-
-    /**
-     * @method datatable_dialog
-     * Dialog to display datatable and select
-     * @param  {Boolean} autoOpen Dialog open automatically or not
-     * @param  {Number} width Dialog width
-     * @param  {Boolean} scrollbars Dialog shows scroll bars or not
-     * @param  {Boolean} modal Dialog shows as modal window or not
-     * @param  {Function/Object} open Dialog open method setup
-     * @param  {Function/Object} close Dialog close method setup
-     */
-    $('.datatable').dialog({
-        autoOpen: false,
-        width: 600,
-        scrollbars: false,
-        modal: true,
-        open: function () {
-            /**
-             * @method accountData
-             * Define the datatable
-             * @type {Object}
-             *
-             * @since FormActions 1.3 beta
-             */
-            var accountData = $('.datatable table').DataTable({
-                select: 'single'
-            });
-            /**
-             * @event accountData_select
-             * Listen the datatable **"select"** event and put the values into inputs
-             * @param  {Object} e        Mandotary parameter, element
-             * @param  {Object} dt       Mandotary parameter, datatable
-             * @param  {String} type     Mandotary parameter, selected type
-             * @param  {Number} indexes  Mandotary parameter, selected index
-             * @return {Array}  dataRow  The real selected data
-             *
-             * @since FormActions 1.3 beta
-             */
-            accountData.on('select', function (e, dt, type, indexes) {
-                if(type === 'row') {
-                    var dataRow = accountData.rows(indexes).data()[0];
-                    $('#AmountList2').val(dataRow[0]);
-                    $('#AmountList3').val(dataRow[1]);
-                    accountData.destroy();
-                    $('#TypeList').dialog('close');
-                }
-            });
-        },
-        close: function() {
-            $('.datatable tbody').find('tr').remove();
-        }
-    });
-
-    /**
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
      * @event Required_blur
      * Dialog fields validation -- Required
      */
@@ -723,10 +542,6 @@ function init() {
              * @event ItemList_show
              * Show every ItemsList except Attachments
              */
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
             $('.ItemsList:not(#Attachments)').show();
         } else {
             RIDText = GetUrlKeyValue('RID');
@@ -742,45 +557,6 @@ function init() {
                             actValue = value;
                         }
                         currentItem.push(actValue);
-<<<<<<< HEAD
-=======
-=======
-            createRID('PCV-', 'autoNumber', function(x) {
-                RIDText = x;
-                console.log(RIDText);
-                $("input[title^='Request ID']").val(RIDText);
-                //Structure of items list
-                $('.RID').val(RIDText);
-
-                /**
-                 * @event updateAutoNumber_PCV
-                 * Last update SP list item with autoNumber + 1, see details: {@link updateAutoNumber}
-                 * @since FormActions 1.1 beta
-                 */
-                updateAutoNumber('Finance Approvers', 1, autoNumber, function(){
-                    /**
-                     * @event getListItemsByKey_BG
-                     * Prepare for BG selection, see details: {@link getListItemsByKey}
-                     * @return {Array}      BG list item content, assign whole Array as currencyList.
-                     */
-                    getListItemsByKey('Currency List', 'ID', '', ['Title', 'Company_x0020_Code', 'Full_x0020_Name', 'Currency', 'Vendor_x0020_Prefix'], function(x){
-                        currencyList = x;
-                        for (var i in currencyList) {
-                            $("select[title^='BG']").append("<option value='" + currencyList[i][0] + "'>" + currencyList[i][0] + ' - ' + currencyList[i][2] + "</option>");
-                        }
-                        /**
-                         * @event attachUserFieldFunction_PayTo
-                         * Attach the automatically get specific user information function to 'Pay To' people picker, see detials: {@link attachUserFieldFunction}
-                         * @since FormActions 1.2 beta
-                         */
-                        attachUserFieldFunction('Pay To', ['Cost Center', 'Employee Number'], ['costCenter', 'employeeNumber']);
-                        /**
-                         * @event WaitingDialog_close
-                         * Close the WaitingDialog after all events executed successfully.
-                         */
-                        WaitingDialog.close();
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
                     });
                     $("input[id^='Status_']").val('Rework');
                     $("input[title^='Request ID']").val(RIDText);
@@ -1114,10 +890,6 @@ function validateAndSaveForm() {
 }
 
 /**
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
  * @method formSaveFunction
  * ###This is the key function to replace original PreSaveAction function, allow async function running inside
  * ###Several suggestions:
@@ -1125,28 +897,6 @@ function validateAndSaveForm() {
  *     - Remember to record save button original function in init function
  *
  * @since FormActions 1.4 beta
-<<<<<<< HEAD
-=======
-=======
- * @class updateAutoNumber
- * #Update the autoNumber + 1 back to SharePoint list item.
- *
- * *The autoNumber list must has the column name **"Auto Number"**, otherwise the function will not work.*
- *
- * @param {String} listTitle >Target SharePoint list title
- * @param {Number} itemId >Item ID to update
- * @param {Number} num >The autoNumber needs to update
- * @param {Function} callback >The callback function to handle other works in form
- *
- * @uses updateListItem
- * @since FormActions 1.1 beta
- *
- * #See the example:
- *     updateAutoNumber('list', 1, 66, function(){
- *         doSomething;
- *     });
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
  */
 function formSaveFunction() {
     //Define vars will use
@@ -1388,8 +1138,6 @@ function getUserFieldValue(fieldName, returnProperty) {
  *
  * @since FormActions 1.2 beta
  *
- * @since FormActions 1.2 beta
- *
  * #See the example:
  *     attachUserFieldFunction('PeoplePicker', ['field1', 'field2'], ['value1', 'value2']);
  */
@@ -1465,8 +1213,6 @@ function attachUserFieldFunction(fieldName, inputFields, keyValues) {
  *
  * @since FormActions 1.0 beta
  *
- * @since FormActions 1.0 beta
- *
  * #See the example:
  *     createListItem('list', [{'Title': 'Title1', 'Content': 'Content1'}, {'Title': 'Title2', 'Content': 'Content2'}])
  *     .then(
@@ -1512,8 +1258,6 @@ function createListItem(listTitle, itemContent) {
  * @param  {String}   listTitle   >The SharePoint list name
  * @param  {String[]}   colName     >The columns to insert data in
  * @param  {String/Number/Boolean[]}   >itemContent The content to insert to item columns
- *
- * @since FormActions 1.0 beta
  *
  * @since FormActions 1.0 beta
  *
@@ -1567,8 +1311,6 @@ function updateListItem(listTitle, itemContent) {
  *
  * @since FormActions 1.0 beta
  *
- * @since FormActions 1.0 beta
- *
  * #See the example:
  *     deleteListItem('list', [1, 2, 3])
  *     .then(
@@ -1616,8 +1358,6 @@ function deleteListItem(listTitle, listIDs) {
  * 
  * @since FormActions 1.0 beta
  *
- * @since FormActions 1.0 beta
- *
  * #See the example:
  *     getListItemsByKey('list', 'ID', 1, ['Title', 'Column'])
  *     .then(
@@ -1659,10 +1399,6 @@ function getListItemsByKey(listTitle, keyColName, keyField, queryFields) {
             var listItemInfos = [];
             var listItemEnumerator = collListItem.getEnumerator();
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
             //console.log(queryFields);
             /**
              * @enum {Object} listItemEnumerator Enumerate the query result list items
@@ -1683,50 +1419,6 @@ function getListItemsByKey(listTitle, keyColName, keyField, queryFields) {
         }
     );
     return dfd.promise();
-<<<<<<< HEAD
-=======
-=======
-/**
- * @method onQuerySucceded
- * Execute if getListItemsByKey succeeded, callback function inheritance from {@link getListItemsByKey}
- * @return {String[]}        >Return all list items contents
- *
- * @since FormActions 1.0 beta
- */
-function onQuerySucceeded(sender, args) {
-    var listItemInfos = [];
-    var listItemEnumerator = collListItem.getEnumerator();
-
-    //console.log(queryFields);
-    //Enumerate the query result list items
-    while (listItemEnumerator.moveNext()) {
-        var listItem = listItemEnumerator.get_current();
-        var listItemInfo = [];
-        for (var i in queryFields) {
-            listItemInfo.push(listItem.get_item(queryFields[i]));
-        }
-        listItemInfos.push(listItemInfo);
-    }
-    //console.log(listItemInfos);
-
-    if(callback && typeof(callback) === 'function') {
-        callback(listItemInfos);
-    } else {
-        return listItemInfos;
-    }
-}
-
-/**
- * @method onQueryFailed
- * Execute if {@link getListItemsByKey} failed
- * @param  {Object} args   >The error message object
- *
- * @since FormActions 1.0 beta
- */
-function onQueryFailed(sender, args){
-    alert('Request failed.' + args.get_message() + '\n' + args.get_stackTrace());
->>>>>>> 56607b3573f09b73e79ad4f2a4af243efdb45a34
->>>>>>> a38a4f7d901547228e6c909ed81aafb76ef9237f
 }
 
 /**
@@ -1766,8 +1458,6 @@ function MaxnTotalCalc(itemList, calcField) {
  * @class initializePeoplePicker
  * The Microsoft JSOM function to initial a self designed people picker
  * @param  {String}   peoplePickerId >The HTML id of text input
- *
- * @since FormActions 1.2 beta
  *
  * @since FormActions 1.2 beta
  *
