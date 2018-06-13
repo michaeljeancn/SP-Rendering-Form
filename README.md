@@ -34,4 +34,4 @@ GitHub is only the place for my development storage before final deploy to Share
 
 #### 4. JavaScript document:
 >Document to describe detail usage of JavaScript functions, behaviors and actions.
-##### Already created as HTML source via JSDuck, open it here: /docs/index.html
+##### Already created as HTML source via JSDuck, open it here: https://michaeljeancn.github.io/SP-Rendering-Form/
