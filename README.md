@@ -8,8 +8,7 @@ GitHub is only the place for my development storage before final deploy to Share
 #### 1. HTML files:
 >Files will build my own blocks inside SharePoint for different purposes:
 * NewForm.html
-* ~~EditForm.html~~
-- Temporarily we don't need it, since Microsoft Flow do not support customize *Approval* event yet.
+* ~~EditForm.html~~ - Temporarily we don't need it, since Microsoft Flow do not support customize *Approval* event yet.
 * DisplayForm.html
 
 #### 2. CSS files:
