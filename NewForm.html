@@ -1,22 +1,22 @@
-<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/jquery-ui-1.12.0/jquery-ui.min.css" rel="stylesheet" />
-<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/ledvance.ui.css" rel="stylesheet" />
-<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/DataTables/datatables.min.css" rel="stylesheet" />
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN//jquery-2.2.4.min.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/jquery-ui-1.12.0/jquery-ui.min.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/ledvance.ui.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/DataTables/datatables.min.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/Osram.UserInfo.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/Osram.UserInfo.CurrentUser.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/moment.min.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/numeral.js"></script>
+<link href="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/jquery-ui-1.12.0/jquery-ui.min.css" rel="stylesheet" />
+<link href="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/ledvance.ui.css" rel="stylesheet" />
+<link href="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/DT2/datatables.min.css" rel="stylesheet" />
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/jquery-2.2.4.min.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/jquery-ui-1.12.0/jquery-ui.min.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/ledvance.ui.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/DT2/datatables.min.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/Osram.UserInfo.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/Osram.UserInfo.CurrentUser.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/moment.min.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/numeral.js"></script>
 <!-- <script src="https://cwe01-dv.ledvance.com/cwe/web/public/javascripts/cweclient.js"></script> -->
-<script src="https://ledvance365.sharepoint.com/sites/APR/SiteAssets/FormActions.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/Apps/PCVasia/FormActions.js"></script>
 <script type="text/javascript">
     $(document).ready(function() {
         SP.SOD.executeFunc('sp.js','SP.ClientContext',init);
     });
 </script>
-<h1>New Payment Request: </h1>
+<h1>New Petty Cash Voucher: </h1>
 <table id="MainInfo" cellspacing="5" cellpadding="5">
     <tbody>
     <tr>
@@ -34,35 +34,16 @@
         <td><span class="spdatacell" data-displayname="Company Code"></span></td>
     </tr>
     <tr>
-		<td class="fieldName"><b><font color="red">*</font>Applicant:</b></td>
-		<td><span class="spdatacell" data-displayname="Applicant"></span></td>
-		<td class="fieldName"><b>PO (If necessary):</b></td>
-		<td><span class="spdatacell" data-displayname="PO"></span></td>
+		<td class="fieldName"><b><font color="red">*</font>Claim Type:</b></td>
+		<td><span class="spdatacell" data-displayname="Claim Type"></span></td>
+		<td class="fieldName"><b><font color="red">*</font>Pay To:</b></td>
+		<td><span class="spdatacell" data-displayname="Pay To"></span></td>
     </tr>
     <tr>
-        <td class="fieldName"><b><font color="red">*</font>Claim Type:</b></td>
-        <td><span class="spdatacell" data-displayname="Claim Type"></span></td>
-        <td class="fieldName" id="coSelect"><b><font color="red">*</font>
-        	<select style="text-align: right;">
-        		<option value="Cost Center" selected="selected">Cost Center:</option>
-        		<option value="Order Number">Order Number:</option>
-        	</select></b></td>
-        <td>
-        	<span class="spdatacell" data-displayname="Cost Center"></span>
-			<span class="spdatacell" data-displayname="Order Number" style="display: none;"></span>
-        </td>
-    </tr>
-    <tr>
-        <td class="fieldName"><b><font color="red">*</font>Vendor / Customer Code:</b></td>
-        <td><span class="spdatacell" data-displayname="Vendor Code"></span></td>
-        <td class="fieldName"><b><font color="red">*</font>Vendor / Customer Name:</b></td>
-        <td><span class="spdatacell" data-displayname="Vendor Name"></span></td>
-    </tr>
-    <tr>
-    	<td class="fieldName"><b>Invoice No. (If necessary):</b></td>
-    	<td><span class="spdatacell" data-displayname="Invoice Number"></span></td>
-    	<td></td>
-    	<td></td>
+        <td class="fieldName changeLabel"><font color="red" style="font-weight: bold">*</font><b>Cost Center:</b></td>
+        <td><span class="spdatacell" data-displayname="Cost Center"></span><span class="spdatacell hidden" data-displayname="Order Number"></span></td>
+        <td class="fieldName"><b><font color="red">*</font>Employee Number:</b></td>
+        <td><span class="spdatacell" data-displayname="Employee Number"></span></td>
     </tr>
     <tr class="trHide">
         <td></td>
@@ -75,6 +56,12 @@
         <td><span class="spdatacell" data-displayname="Currency"></span></td>
         <td></td>
         <td><span class="spdatacell" data-displayname="BG"></span></td>
+    </tr>
+    <tr class="trHide">
+        <td></td>
+        <td><span class="spdatacell" data-displayname="Vendor"></span></td>
+        <td></td>
+        <td></td>
     </tr>
     </tbody>
 </table>
@@ -96,16 +83,63 @@
                 <th class="fieldName">Request ID: </th>
                 <td><input id="AmountList1" type="text" class="RID ms-long" disabled="disabled" /><p class="Status"></p></td>
             </tr>
-                <th class="fieldName">Description: </th>
-                <td><textarea id="AmountList2" rows="3" class="text ms-long Required"></textarea></td>
+            <tr class="trHide">
+                <th></th>
+                <td><input id="AmountList2" type="text" class="text ms-long" /></td>
             </tr>
             <tr>
-                <th class="fieldName">Amount: </th>
-                <td><input id="AmountList3" type="text" class="text ms-long Required" /></td>
+                <th class="fieldName"><font color="red">*</font>Expense Type: </th>
+                <td><font color="red">Click to open selectable list</font>
+                    <input id="AmountList3" type="text" class="text ms-long Required" />
+                    <div id="TypeList" class="datatable">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Account</th>
+                                    <th>Description(English)</th>
+                                    <th>Description(Locale)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
             </tr>
+            <tr class="trHide MSR">
+                <th class="fieldName"><font color="red">*</font>Claim Period: </th>
+                <td><select id="SeasonSelector">
+                    <option  selected="selected" value=""></option>
+                    <option value="Q1">Oct-Dec Q1</option>
+                    <option value="Q2">Jan-Mar Q2</option>
+                    <option value="Q3">Apr-Jun Q3</option>
+                    <option value="Q4">Jul-Sep Q4</option>
+                </select></td>
             </tr>
-            <th class="fieldName">Currency:</th>
-            <td><input id="AmountList4" type="text" class="text ms-long Required" /></td>
+            <tr class="trHide MSR">
+                <th></th>
+                <td>Monthly Mobile Allowance is: <span id="MMAllowance">0</span>  Current Balance is: <span id="SeasonBalance">0</span></td>
+            </tr>
+            <tr>
+                <th class="fieldName"><font color="red">*</font>Description: </th>
+                <td><textarea id="AmountList4" rows="3" class="text ms-long Required"></textarea></td>
+            </tr>
+            <tr>
+                <th class="fieldName">Invoice Number: </th>
+                <td><input id="AmountList5" type="text" class="text ms-long" /></td>
+            </tr>
+            <tr>
+                <th class="fieldName"><font color="red">*</font>Amount: </th>
+                <td><input id="AmountList6" type="text" class="text ms-long Required" /></td>
+            </tr>
+            <tr>
+                <th class="fieldName">Currency:</th>
+                <td><input id="AmountList7" type="text" class="currency" readonly="readonly" /></td>
+            </tr>
+            <tr class="trHide">
+                <th></th>
+                <td><input id="AmountList8" type="text" class="text ms-long" /></td>
             </tr>
             </tbody>
         </table>
@@ -114,9 +148,13 @@
         <tbody class="selectable">
         <tr>
             <th title="Title">Request ID</th>
+            <th class="hidden" title="Account">Account</th>
+            <th title="Account_Type">Expense Type</th>
             <th title="Description">Description</th>
+            <th title="Invoice_Number">Invoice Number</th>
             <th title="Amount">Amount</th>
             <th title="Currency">Currency</th>
+            <th class="hidden" title="Left">Left</th>
         </tr>
         </tbody>
     </table>

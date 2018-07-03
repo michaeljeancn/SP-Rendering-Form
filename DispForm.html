@@ -1,22 +1,22 @@
-<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/jquery-ui-1.12.0/jquery-ui.min.css" rel="stylesheet" />
-<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/ledvance.ui.css" rel="stylesheet" />
-<link href="https://ledvance365.sharepoint.com/sites/tools/CDN/DataTables/datatables.min.css" rel="stylesheet" />
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN//jquery-2.2.4.min.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/jquery-ui-1.12.0/jquery-ui.min.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/ledvance.ui.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/DataTables/datatables.min.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/Osram.UserInfo.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/Osram.UserInfo.CurrentUser.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/moment.min.js"></script>
-<script src="https://ledvance365.sharepoint.com/sites/tools/CDN/numeral.js"></script>
+<link href="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/jquery-ui-1.12.0/jquery-ui.min.css" rel="stylesheet" />
+<link href="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/ledvance.ui.css" rel="stylesheet" />
+<link href="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/DT2/datatables.min.css" rel="stylesheet" />
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/jquery-2.2.4.min.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/jquery-ui-1.12.0/jquery-ui.min.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/ledvance.ui.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/DT2/datatables.min.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/Osram.UserInfo.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/Osram.UserInfo.CurrentUser.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/moment.min.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/numeral.js"></script>
 <!-- <script src="https://cwe01-dv.ledvance.com/cwe/web/public/javascripts/cweclient.js"></script> -->
-<script src="https://ledvance365.sharepoint.com/sites/APR/SiteAssets/FormActions.js"></script>
+<script src="https://itsp01funcapps0b2e4.blob.core.windows.net/itsp01cdn/v1/Apps/PCVasia/FormActions.js"></script>
 <script type="text/javascript">
     $(document).ready(function() {
         SP.SOD.executeFunc('sp.js','SP.ClientContext',init);
     });
 </script>
-<h1>Payment Request: <span class="spdatacell" data-displayname="Form"></span></h1>
+<h1>Petty Cash Voucher: <span class="spdatacell" data-displayname="Form"></span></h1>
 <table id="MainInfo" cellspacing="5" cellpadding="5">
     <tbody>
     <tr>
@@ -32,31 +32,19 @@
         <td><span class="spdatacell" data-displayname="Company Code"></span></td>
     </tr>
     <tr>
-		<td class="fieldName"><b>Applicant:</b></td>
-		<td><span class="spdatacell" data-displayname="Applicant"></span></td>
-		<td class="fieldName"><b>PO (If necessary):</b></td>
-		<td><span class="spdatacell" data-displayname="PO"></span></td>
+		<td class="fieldName"><b>Claim Type:</b></td>
+		<td><span class="spdatacell" data-displayname="Claim Type"></span></td>
+		<td class="fieldName"><b>Pay To:</b></td>
+		<td><span class="spdatacell" data-displayname="Pay To"></span></td>
     </tr>
     <tr>
-        <td class="fieldName"><b>Claim Type:</b></td>
-        <td><span class="spdatacell" data-displayname="Claim Type"></span></td>
         <td class="fieldName" id="coSelect"><b></b></td>
         <td>
         	<span class="spdatacell" data-displayname="Cost Center"></span>
 			<span class="spdatacell" data-displayname="Order Number" style="display: none;"></span>
         </td>
-    </tr>
-    <tr>
-        <td class="fieldName"><b>Vendor / Customer Code:</b></td>
-        <td><span class="spdatacell" data-displayname="Vendor Code"></span></td>
-        <td class="fieldName"><b>Vendor / Customer Name:</b></td>
-        <td><span class="spdatacell" data-displayname="Vendor Name"></span></td>
-    </tr>
-    <tr>
-    	<td class="fieldName"><b>Invoice No. (If necessary):</b></td>
-    	<td><span class="spdatacell" data-displayname="Invoice Number"></span></td>
-    	<td></td>
-    	<td></td>
+        <td class="fieldName"><b>Employee Number:</b></td>
+        <td><span class="spdatacell" data-displayname="Employee Number"></span></td>
     </tr>
     <tr class="trHide">
         <td></td>
@@ -76,9 +64,13 @@
         <tbody class="selectable">
             <tr>
                 <th title="Title">Request ID</th>
+                <th title="Account">Account</th>
+                <th title="Account_Type">Expense Type</th>
                 <th title="Description">Description</th>
+                <th title="Invoice_Number">Invoice Number</th>
                 <th title="Amount">Amount</th>
                 <th title="Currency">Currency</th>
+                <th class="hidden" title="Left"></th>
             </tr>
         </tbody>
     </table>
