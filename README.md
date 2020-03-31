@@ -34,3 +34,12 @@ GitHub is only the place for my development storage before final deploy to Share
 #### 4. JavaScript document:
 >Document to describe detail usage of JavaScript functions, behaviors and actions.
 ##### Already created as HTML source via JSDuck, open it here: https://michaeljeancn.github.io/SP-Rendering-Form/
+
+----------------------------------------------------
+# Temporarily record here:
+1. Python learning: 
+## https://github.com/jackfrued/Python-100-Days
+## https://www.liaoxuefeng.com/wiki/1016959663602400
+2. JS Learning:
+## https://wangdoc.com/javascript
+## https://es6.ruanyifeng.com/
