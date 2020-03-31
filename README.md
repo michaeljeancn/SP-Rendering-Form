@@ -38,8 +38,8 @@ GitHub is only the place for my development storage before final deploy to Share
 ----------------------------------------------------
 # Temporarily record here:
 1. Python learning: 
-## https://github.com/jackfrued/Python-100-Days
-## https://www.liaoxuefeng.com/wiki/1016959663602400
+- https://github.com/jackfrued/Python-100-Days
+- https://www.liaoxuefeng.com/wiki/1016959663602400
 2. JS Learning:
-## https://wangdoc.com/javascript
-## https://es6.ruanyifeng.com/
+- https://wangdoc.com/javascript
+- https://es6.ruanyifeng.com/
